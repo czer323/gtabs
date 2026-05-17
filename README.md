@@ -21,6 +21,10 @@
 
 ---
 
+## What's New in v0.5.1
+
+**Service Worker Reliability** — gTabs now rebuilds Chrome context menus with a full cleanup pass, serializes overlapping tab-group rebuilds, and ignores duplicate context menu ID errors during reload. This fixes MV3 service worker startup failures like `Cannot create item with duplicate id gtabs-add-to-group`.
+
 ## What's New in v0.5
 
 **Smart Learning** — gTabs now learns from every interaction. Corrections you make before applying count 3x. Groups you remove are remembered and avoided. Domain affinity is weighted by frequency and recency with a 14-day decay half-life.
@@ -257,7 +261,7 @@ Background Service Worker
 
 ```bash
 npm install          # install dev deps
-npm test             # run 287 tests
+npm test             # run 394 tests
 npm run test:watch   # watch mode
 npm run build        # build -> dist/
 npm run dev          # watch + rebuild on change
