@@ -72,7 +72,17 @@ export function resetAllMocks() {
   vi.mocked(chrome.windows.getLastFocused).mockReset().mockResolvedValue({ id: 1 } as any);
   vi.mocked(chrome.windows.getAll).mockReset().mockResolvedValue([{ id: 1, tabs: [] }] as any);
   vi.mocked(chrome.windows.create).mockReset().mockResolvedValue({ id: 2 } as any);
-  vi.mocked(chrome.contextMenus.remove).mockReset().mockResolvedValue(undefined as any);
+  vi.mocked(chrome.contextMenus.create).mockReset().mockImplementation((_props: any, callback?: () => void) => {
+    callback?.();
+  });
+  vi.mocked(chrome.contextMenus.remove).mockReset().mockImplementation((_menuItemId: any, callback?: () => void) => {
+    callback?.();
+    return Promise.resolve(undefined as any) as any;
+  });
+  vi.mocked(chrome.contextMenus.removeAll).mockReset().mockImplementation((callback?: () => void) => {
+    callback?.();
+    return Promise.resolve(undefined as any) as any;
+  });
   vi.mocked(chrome.bookmarks.create).mockReset().mockImplementation(async (bookmark: any) => ({
     id: String(groupIdCounter++),
     ...bookmark,
@@ -130,6 +140,7 @@ let groupIdCounter = 100;
   runtime: {
     onMessage: new MockEvent(),
     onInstalled: new MockEvent(),
+    lastError: undefined,
     sendMessage: vi.fn(),
     openOptionsPage: vi.fn(() => Promise.resolve()),
   },
@@ -137,8 +148,9 @@ let groupIdCounter = 100;
     onCommand: new MockEvent(),
   },
   contextMenus: {
-    create: vi.fn(),
-    remove: vi.fn(() => Promise.resolve()),
+    create: vi.fn((_props: any, callback?: () => void) => callback?.()),
+    remove: vi.fn((_menuItemId: any, callback?: () => void) => { callback?.(); return Promise.resolve(); }),
+    removeAll: vi.fn((callback?: () => void) => { callback?.(); return Promise.resolve(); }),
     onClicked: new MockEvent(),
   },
   storage: {

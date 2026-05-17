@@ -617,8 +617,70 @@ describe('event listeners', () => {
     it('handles onInstalled', async () => {
       await (chrome.runtime.onInstalled as any).callListeners();
       expect(chrome.alarms.create).toHaveBeenCalled();
-      // 4 action-context menus + 1 parent from rebuildAddToGroupMenus (no focused groups in tests)
-      expect(chrome.contextMenus.create).toHaveBeenCalledTimes(5);
+      // 4 action-context menus + Add-to-group parent + New group child
+      expect(chrome.contextMenus.create).toHaveBeenCalledTimes(6);
+      expect(chrome.contextMenus.removeAll).toHaveBeenCalledOnce();
+    });
+
+    it('rebuilds context menu children from current groups', async () => {
+      vi.mocked(chrome.tabGroups.query).mockResolvedValue([
+        { id: 101, title: 'Docs', color: 'blue', windowId: 1 },
+        { id: 202, title: '', color: 'grey', windowId: 1 },
+      ] as any);
+
+      await (chrome.runtime.onInstalled as any).callListeners();
+
+      const created = vi.mocked(chrome.contextMenus.create).mock.calls.map(([props]) => props);
+      expect(created.map(item => item.id)).toEqual([
+        'gtabs-organize',
+        'gtabs-organize-ungrouped',
+        'gtabs-undo',
+        'gtabs-duplicates',
+        'gtabs-add-to-group',
+        'gtabs-add-to-group-101',
+        'gtabs-add-to-group-202',
+        'gtabs-add-to-group-new',
+      ]);
+      expect(created).toEqual(expect.arrayContaining([
+        expect.objectContaining({ id: 'gtabs-add-to-group-101', parentId: 'gtabs-add-to-group', title: 'Docs' }),
+        expect.objectContaining({ id: 'gtabs-add-to-group-202', parentId: 'gtabs-add-to-group', title: 'Group 202' }),
+      ]));
+    });
+
+    it('ignores duplicate context menu create errors during rebuild', async () => {
+      const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
+      vi.mocked(chrome.contextMenus.create).mockImplementation((_props: any, callback?: () => void) => {
+        (chrome.runtime as any).lastError = { message: 'Cannot create item with duplicate id gtabs-add-to-group' };
+        callback?.();
+        (chrome.runtime as any).lastError = undefined;
+      });
+
+      await expect((chrome.runtime.onInstalled as any).callListeners()).resolves.toBeDefined();
+
+      expect(chrome.contextMenus.create).toHaveBeenCalledTimes(6);
+      expect(warnSpy).not.toHaveBeenCalled();
+      warnSpy.mockRestore();
+    });
+
+    it('serializes overlapping context menu rebuilds', async () => {
+      const removeCallbacks: Array<() => void> = [];
+      vi.mocked(chrome.contextMenus.removeAll).mockImplementation((callback?: () => void) => {
+        if (callback) removeCallbacks.push(callback);
+        return Promise.resolve(undefined as any) as any;
+      });
+
+      const first = (chrome.tabGroups.onCreated as any).callListeners({ id: 1 });
+      const second = (chrome.tabGroups.onRemoved as any).callListeners(1);
+      await Promise.resolve();
+
+      expect(chrome.contextMenus.removeAll).toHaveBeenCalledTimes(1);
+      removeCallbacks.shift()?.();
+      await first;
+      await Promise.resolve();
+
+      expect(chrome.contextMenus.removeAll).toHaveBeenCalledTimes(2);
+      removeCallbacks.shift()?.();
+      await second;
     });
 
     it('handles commands', async () => {

@@ -1,5 +1,11 @@
 # Changelog
 
+## [0.5.1] - 2026-05-17
+### Fixed
+- Rebuild context menus with a full `removeAll()` pass so stale child IDs cannot break service worker startup.
+- Serialize overlapping context menu rebuilds from tab group events.
+- Ignore duplicate context menu create errors during rebuild so Chrome reloads stay clean.
+
 ## [0.5.0] - 2026-04-09
 ### Added
 - Tab Snooze — hide tabs temporarily and restore them at a chosen time.

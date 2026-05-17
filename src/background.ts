@@ -57,6 +57,12 @@ const ALARM_NAME = 'gtabs-check';
 const REORG_ALARM_NAME = 'gtabs-reorg';
 const SNOOZE_ALARM_PREFIX = 'gtabs-snooze-';
 const CTX_ADD_TO_GROUP_ID = 'gtabs-add-to-group';
+const ACTION_CONTEXT_MENUS: chrome.contextMenus.CreateProperties[] = [
+  { id: 'gtabs-organize', title: 'Organize all tabs', contexts: ['action'] },
+  { id: 'gtabs-organize-ungrouped', title: 'Organize ungrouped tabs only', contexts: ['action'] },
+  { id: 'gtabs-undo', title: 'Undo last grouping', contexts: ['action'] },
+  { id: 'gtabs-duplicates', title: 'Find duplicate tabs', contexts: ['action'] },
+];
 
 // In-memory state (session-only, not persisted)
 const openerMap = new Map<number, number>();
@@ -83,6 +89,7 @@ const MAX_TRACKED_TAB_RELATIONS = 5000;
 
 let autoCheckInFlight = false;
 let lastAutoCheckTime = 0;
+let contextMenuRebuildQueue: Promise<void> = Promise.resolve();
 const AUTO_CHECK_COOLDOWN_MS = 60_000; // 60s minimum between auto-organize
 const MAX_CONTEXT_GROUP_ID = 1_000_000_000;
 
@@ -286,12 +293,39 @@ export async function restoreSnapshot(snapshot: UndoSnapshot): Promise<void> {
   }
 }
 
-async function rebuildAddToGroupMenus(): Promise<void> {
-  try {
-    await chrome.contextMenus.remove(CTX_ADD_TO_GROUP_ID);
-  } catch { /* not found */ }
+function consumeLastError(): string | undefined {
+  return chrome.runtime.lastError?.message;
+}
 
-  chrome.contextMenus.create({
+function removeAllContextMenus(): Promise<void> {
+  return new Promise(resolve => {
+    chrome.contextMenus.removeAll(() => {
+      consumeLastError();
+      resolve();
+    });
+  });
+}
+
+function createContextMenu(props: chrome.contextMenus.CreateProperties): Promise<void> {
+  return new Promise(resolve => {
+    chrome.contextMenus.create(props, () => {
+      const error = consumeLastError();
+      if (error && !error.includes('duplicate id')) {
+        console.warn('[gTabs] Failed to create context menu:', props.id, error);
+      }
+      resolve();
+    });
+  });
+}
+
+async function rebuildContextMenusNow(): Promise<void> {
+  await removeAllContextMenus();
+
+  for (const item of ACTION_CONTEXT_MENUS) {
+    await createContextMenu(item);
+  }
+
+  await createContextMenu({
     id: CTX_ADD_TO_GROUP_ID,
     title: 'Add tab to group...',
     contexts: ['page'],
@@ -299,14 +333,14 @@ async function rebuildAddToGroupMenus(): Promise<void> {
 
   let groups: chrome.tabGroups.TabGroup[] = [];
   try {
-    const win = await chrome.windows.getCurrent({ populate: false });
+    const win = await chrome.windows.getLastFocused({ populate: false });
     if (win.id !== undefined) {
       groups = await chrome.tabGroups.query({ windowId: win.id });
     }
   } catch { /* no focused window */ }
 
   for (const group of groups) {
-    chrome.contextMenus.create({
+    await createContextMenu({
       id: `${CTX_ADD_TO_GROUP_ID}-${group.id}`,
       parentId: CTX_ADD_TO_GROUP_ID,
       title: group.title || `Group ${group.id}`,
@@ -314,12 +348,20 @@ async function rebuildAddToGroupMenus(): Promise<void> {
     });
   }
 
-  chrome.contextMenus.create({
+  await createContextMenu({
     id: `${CTX_ADD_TO_GROUP_ID}-new`,
     parentId: CTX_ADD_TO_GROUP_ID,
     title: '+ New group',
     contexts: ['page'],
   });
+}
+
+function rebuildContextMenus(): Promise<void> {
+  const rebuild = contextMenuRebuildQueue.then(rebuildContextMenusNow, rebuildContextMenusNow);
+  contextMenuRebuildQueue = rebuild.catch(err => {
+    console.warn('[gTabs] Failed to rebuild context menus:', err instanceof Error ? err.message : err);
+  });
+  return rebuild;
 }
 
 export async function organize(ungroupedOnly = false): Promise<{ suggestions?: GroupSuggestion[]; error?: string }> {
@@ -1106,11 +1148,7 @@ chrome.commands?.onCommand?.addListener((command: string) => {
 chrome.runtime.onInstalled.addListener(() => {
   chrome.alarms.create(ALARM_NAME, { periodInMinutes: 2 });
   setupReorgAlarm();
-  chrome.contextMenus?.create({ id: 'gtabs-organize', title: 'Organize all tabs', contexts: ['action'] });
-  chrome.contextMenus?.create({ id: 'gtabs-organize-ungrouped', title: 'Organize ungrouped tabs only', contexts: ['action'] });
-  chrome.contextMenus?.create({ id: 'gtabs-undo', title: 'Undo last grouping', contexts: ['action'] });
-  chrome.contextMenus?.create({ id: 'gtabs-duplicates', title: 'Find duplicate tabs', contexts: ['action'] });
-  rebuildAddToGroupMenus();
+  return rebuildContextMenus();
 });
 
 chrome.contextMenus?.onClicked?.addListener((info) => {
@@ -1126,7 +1164,7 @@ chrome.contextMenus?.onClicked?.addListener((info) => {
       const newGroupId = await groupTabsSafe([tabId]);
       if (newGroupId === null) return;
       await chrome.tabGroups.update(newGroupId, { title: 'New Group', collapsed: false });
-      await rebuildAddToGroupMenus();
+      await rebuildContextMenus();
     })();
   } else if (menuId.startsWith(`${CTX_ADD_TO_GROUP_ID}-`) && info.tab?.id !== undefined) {
     const groupId = Number(menuId.slice(CTX_ADD_TO_GROUP_ID.length + 1));
@@ -1136,10 +1174,10 @@ chrome.contextMenus?.onClicked?.addListener((info) => {
   }
 });
 
-chrome.tabGroups?.onCreated?.addListener(() => rebuildAddToGroupMenus());
-chrome.tabGroups?.onRemoved?.addListener(() => rebuildAddToGroupMenus());
+chrome.tabGroups?.onCreated?.addListener(() => rebuildContextMenus());
+chrome.tabGroups?.onRemoved?.addListener(() => rebuildContextMenus());
 chrome.tabGroups?.onUpdated?.addListener((group) => {
-  rebuildAddToGroupMenus();
+  rebuildContextMenus();
   if (group.title && group.color) {
     saveGroupColorPref(group.title, group.color as Color).catch(() => {});
   }
