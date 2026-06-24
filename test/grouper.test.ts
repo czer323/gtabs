@@ -75,6 +75,40 @@ describe('applyDomainRules', () => {
     expect(matched[0].tabs[0].id).toBe(10);
   });
 
+  it('matches wildcard domains for AWS multi-session hosts', () => {
+    const awsTabs: TabInfo[] = [
+      {
+        id: 20,
+        title: 'AWS Console',
+        url: 'https://123456789012-a1b2c3.us-east-1.console.aws.amazon.com/ec2/home',
+      },
+      {
+        id: 21,
+        title: 'AWS Console EU',
+        url: 'https://123456789012-z9y8x7.eu-west-1.console.aws.amazon.com/lambda/home',
+      },
+    ];
+    const rules: DomainRule[] = [
+      { domain: '123456789012-*.console.aws.amazon.com', groupName: 'AWS Prod', color: 'purple' },
+    ];
+
+    const { matched, remaining } = applyDomainRules(awsTabs, rules);
+
+    expect(matched).toHaveLength(1);
+    expect(matched[0].name).toBe('AWS Prod');
+    expect(matched[0].tabs.map(t => t.id)).toEqual([20, 21]);
+    expect(remaining).toHaveLength(0);
+  });
+
+  it('does not treat exact domains as prefix or subdomain matches', () => {
+    const subdomainTabs: TabInfo[] = [{ id: 22, title: 'API', url: 'https://api.github.com/repos' }];
+    const rules: DomainRule[] = [{ domain: 'github.com', groupName: 'Dev', color: 'blue' }];
+    const { matched, remaining } = applyDomainRules(subdomainTabs, rules);
+
+    expect(matched).toHaveLength(0);
+    expect(remaining).toEqual(subdomainTabs);
+  });
+
   it('groups multiple tabs matching same rule', () => {
     const moreTabs: TabInfo[] = [
       { id: 10, title: 'GH 1', url: 'https://github.com/a' },
@@ -102,10 +136,32 @@ describe('applyDomainRules', () => {
     expect(remaining).toHaveLength(1);
   });
 
+  it('leaves invalid URLs unmatched even with wildcard rules', () => {
+    const badTabs: TabInfo[] = [{ id: 100, title: 'Bad', url: 'not-a-url' }];
+    const rules: DomainRule[] = [{ domain: '*.com', groupName: 'Wildcard', color: 'cyan' }];
+    const { matched, remaining } = applyDomainRules(badTabs, rules);
+
+    expect(matched).toHaveLength(0);
+    expect(remaining).toEqual(badTabs);
+  });
+
   it('preserves color from domain rule', () => {
     const rules: DomainRule[] = [{ domain: 'github.com', groupName: 'Dev', color: 'purple' }];
     const { matched } = applyDomainRules(tabs, rules);
     expect(matched[0].color).toBe('purple');
+  });
+
+  it('prefers exact rules over wildcard rules', () => {
+    const exactTabs: TabInfo[] = [{ id: 101, title: 'Console', url: 'https://console.aws.amazon.com/home' }];
+    const rules: DomainRule[] = [
+      { domain: '*.aws.amazon.com', groupName: 'AWS Wildcard', color: 'pink' },
+      { domain: 'console.aws.amazon.com', groupName: 'AWS Exact', color: 'green' },
+    ];
+    const { matched } = applyDomainRules(exactTabs, rules);
+
+    expect(matched).toHaveLength(1);
+    expect(matched[0].name).toBe('AWS Exact');
+    expect(matched[0].color).toBe('green');
   });
 });
 
@@ -136,6 +192,30 @@ describe('inferTargetGroup', () => {
   it('strips www. from hostname when checking rules', () => {
     const rules: DomainRule[] = [{ domain: 'youtube.com', groupName: 'Media', color: 'red' }];
     expect(inferTargetGroup('https://www.youtube.com/watch', rules, {})).toEqual({ name: 'Media', color: 'red' });
+  });
+
+  it('matches wildcard rules when inferring target groups', () => {
+    const rules: DomainRule[] = [
+      { domain: '123456789012-*.console.aws.amazon.com', groupName: 'AWS Prod', color: 'purple' },
+    ];
+
+    expect(inferTargetGroup(
+      'https://123456789012-newsession.ap-south-1.console.aws.amazon.com/cloudwatch/home',
+      rules,
+      {},
+    )).toEqual({ name: 'AWS Prod', color: 'purple' });
+  });
+
+  it('prefers exact rules over wildcard rules when inferring target groups', () => {
+    const rules: DomainRule[] = [
+      { domain: '*.aws.amazon.com', groupName: 'AWS Wildcard', color: 'pink' },
+      { domain: 'console.aws.amazon.com', groupName: 'AWS Exact', color: 'green' },
+    ];
+
+    expect(inferTargetGroup('https://console.aws.amazon.com/home', rules, {})).toEqual({
+      name: 'AWS Exact',
+      color: 'green',
+    });
   });
 
   it('strips www. from hostname when checking affinity', () => {
@@ -467,6 +547,29 @@ describe('suggest', () => {
     const devGroup = result.find(g => g.name === 'Dev');
     expect(devGroup).toBeDefined();
     expect(devGroup!.tabs[0].id).toBe(1);
+  });
+
+  it('applies wildcard domain rules before LLM call', async () => {
+    mockLLM('[{"name":"Other","color":"green","tabIds":[2]}]');
+    const awsTabs: TabInfo[] = [
+      {
+        id: 30,
+        title: 'AWS Console',
+        url: 'https://123456789012-a1b2c3.us-east-1.console.aws.amazon.com/ec2/home',
+      },
+      { id: 31, title: 'Stack Overflow', url: 'https://stackoverflow.com/q/123' },
+    ];
+    const rules: DomainRule[] = [
+      { domain: '123456789012-*.console.aws.amazon.com', groupName: 'AWS Prod', color: 'purple' },
+    ];
+
+    const { suggestions: result } = await suggest(awsTabs, TEST_SETTINGS, {}, rules);
+
+    const awsGroup = result.find(g => g.name === 'AWS Prod');
+    expect(awsGroup).toBeDefined();
+    expect(awsGroup!.tabs.map(t => t.id)).toEqual([30]);
+    const body = JSON.parse(vi.mocked(fetch).mock.calls[0][1]!.body as string);
+    expect(body.messages[1].content).not.toContain('AWS Console');
   });
 
   it('skips LLM when all tabs matched by rules', async () => {

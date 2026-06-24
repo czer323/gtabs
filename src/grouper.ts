@@ -11,10 +11,51 @@ export function truncateTitle(title: string, maxLen: number): string {
   return title.slice(0, maxLen - 1) + '\u2026';
 }
 
+function hostnameCandidates(hostname: string): string[] {
+  const normalized = hostname.toLowerCase();
+  const stripped = normalized.replace(/^www\./, '');
+  return stripped === normalized ? [normalized] : [normalized, stripped];
+}
+
+function escapeRegex(text: string): string {
+  return text.replace(/[.+?^${}()|[\]\\]/g, '\\$&');
+}
+
+function globMatchesHostname(pattern: string, hostname: string): boolean {
+  const regex = new RegExp(`^${pattern.split('*').map(escapeRegex).join('.*')}$`);
+  return regex.test(hostname);
+}
+
+function findMatchingDomainRule(hostname: string, rules: DomainRule[]): DomainRule | undefined {
+  const candidates = hostnameCandidates(hostname);
+  const exactRules = new Map<string, DomainRule>();
+  const wildcardRules: DomainRule[] = [];
+
+  for (const rule of rules) {
+    const domain = rule.domain.trim().toLowerCase();
+    if (!domain) continue;
+    if (domain.includes('*')) wildcardRules.push(rule);
+    else exactRules.set(domain, rule);
+  }
+
+  for (const candidate of candidates) {
+    const rule = exactRules.get(candidate);
+    if (rule) return rule;
+  }
+
+  let wildcardMatch: DomainRule | undefined;
+  for (const rule of wildcardRules) {
+    const pattern = rule.domain.trim().toLowerCase();
+    if (candidates.some(candidate => globMatchesHostname(pattern, candidate))) {
+      wildcardMatch = rule;
+    }
+  }
+  return wildcardMatch;
+}
+
 export function applyDomainRules(tabs: TabInfo[], rules: DomainRule[]): { matched: GroupSuggestion[]; remaining: TabInfo[] } {
   if (!rules.length) return { matched: [], remaining: tabs };
 
-  const ruleMap = new Map(rules.map(r => [r.domain, r]));
   const groups = new Map<string, { rule: DomainRule; tabs: TabInfo[] }>();
   const remaining: TabInfo[] = [];
 
@@ -22,7 +63,7 @@ export function applyDomainRules(tabs: TabInfo[], rules: DomainRule[]): { matche
     let hostname = '';
     try { hostname = new URL(tab.url).hostname; } catch { remaining.push(tab); continue; }
 
-    const rule = ruleMap.get(hostname) || ruleMap.get(hostname.replace(/^www\./, ''));
+    const rule = findMatchingDomainRule(hostname, rules);
     if (rule) {
       const key = rule.domain;
       if (!groups.has(key)) groups.set(key, { rule, tabs: [] });
@@ -52,8 +93,7 @@ export function inferTargetGroup(
   try { hostname = new URL(urlStr).hostname; } catch { return null; }
 
   // 1. Domain rules (highest priority)
-  const ruleMap = new Map(rules.map(r => [r.domain, r]));
-  const rule = ruleMap.get(hostname) || ruleMap.get(hostname.replace(/^www\./, ''));
+  const rule = findMatchingDomainRule(hostname, rules);
   if (rule) return { name: rule.groupName, color: rule.color };
 
   const stripped = hostname.replace(/^www\./, '');
