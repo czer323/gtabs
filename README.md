@@ -89,7 +89,7 @@
 | **Clear Groups** | Ungroups everything in the current window |
 | **Duplicate Detection** | Finds tabs with the same URL |
 | **Zero-LLM Fast Routing** | Routes new tabs into existing groups via affinity — no API calls |
-| **Domain Rules** | Hard-wire `github.com` to `Dev`, always, skipping the LLM entirely |
+| **Domain Rules** | Hard-wire `github.com` or `*.example.com` to `Dev`, always, skipping the LLM entirely |
 
 ### Providers
 

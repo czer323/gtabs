@@ -327,7 +327,7 @@ async function renderDomainRules() {
     const row = document.createElement('div');
     row.className = 'rule-row';
     row.innerHTML = `
-      <input type="text" value="${esc(r.domain)}" placeholder="domain.com" data-i="${i}" class="rule-domain" />
+      <input type="text" value="${esc(r.domain)}" placeholder="domain.com or *.example.com" data-i="${i}" class="rule-domain" />
       <input type="text" value="${esc(r.groupName)}" placeholder="Group Name" data-i="${i}" class="rule-group" style="max-width:120px" />
       <select data-i="${i}" class="rule-color">
         ${COLORS.map(c => `<option value="${c}" ${c === r.color ? 'selected' : ''}>${c}</option>`).join('')}
