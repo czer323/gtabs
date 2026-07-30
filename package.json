@@ -8,13 +8,20 @@
     "package": "rm -f gtabs-extension.zip && cd dist && (xattr -cr . 2>/dev/null || true) && zip -rX ../gtabs-extension.zip . -x '*.map' && cd .. && echo 'Packaged → gtabs-extension.zip'",
     "test": "vitest run",
     "test:watch": "vitest",
-    "dev": "node build.mjs --watch"
+    "dev": "node build.mjs --watch",
+    "lint": "oxlint --deny-warnings",
+    "format": "oxfmt",
+    "format-check": "oxfmt --check",
+    "typecheck": "tsc --noEmit",
+    "check": "oxlint && oxfmt --check && npm test && npx tsc --noEmit"
   },
   "devDependencies": {
     "@types/chrome": "^0.1.38",
     "@vitest/coverage-v8": "^2.1.0",
     "esbuild": "^0.24.0",
     "jsdom": "^29.0.1",
+    "oxfmt": "^0.61.0",
+    "oxlint": "^1.76.0",
     "typescript": "^5.7.0",
     "vitest": "^2.1.0"
   }
