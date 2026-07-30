@@ -1,0 +1,8 @@
+blank_issues_enabled: true
+contact_links:
+  - name: Contributing Guide
+    url: https://github.com/vaddisrinivas/gtabs/blob/main/CONTRIBUTING.md
+    about: Development setup, coding standards, and PR workflow
+  - name: Architecture Overview
+    url: https://github.com/vaddisrinivas/gtabs/blob/main/docs/ARCHITECTURE.md
+    about: How gTabs is structured internally
