@@ -1,0 +1,63 @@
+name: User Story
+description: Plan a new feature or improvement using the Mike Cohn + Gherkin format
+labels: ["enhancement"]
+body:
+  - type: input
+    id: summary
+    attributes:
+      label: Summary
+      description: Brief, memorable title focused on value to the user
+      placeholder: "e.g. Enable Google login for trial users to reduce signup friction"
+    validations:
+      required: true
+
+  - type: input
+    id: persona
+    attributes:
+      label: As a
+      description: Who is this for? (user persona or role)
+      placeholder: "e.g. trial user visiting the app for the first time"
+    validations:
+      required: true
+
+  - type: input
+    id: action
+    attributes:
+      label: I want to
+      description: What action does the user take to achieve the outcome?
+      placeholder: "e.g. log in using my Google account"
+    validations:
+      required: true
+
+  - type: input
+    id: outcome
+    attributes:
+      label: So that
+      description: What is the desired outcome or benefit?
+      placeholder: "e.g. I can access the app without creating and remembering a new password"
+    validations:
+      required: true
+
+  - type: textarea
+    id: scenarios
+    attributes:
+      label: Acceptance Criteria
+      description: One or more Gherkin scenarios. Each scenario should have Given/When/Then. Use "and Given" for additional preconditions.
+      placeholder: |
+        Scenario: First-time user logs in via Google OAuth
+        Given I am on the login page
+        and Given I have a Google account
+        When I click "Sign in with Google" and authorize the app
+        Then I am logged in and redirected to the onboarding flow
+      render: text
+    validations:
+      required: true
+
+  - type: textarea
+    id: context
+    attributes:
+      label: Additional Context
+      description: Implementation notes, constraints, edge cases, or references to related issues
+      placeholder: "e.g. Requires OAuth client ID from Google Cloud Console"
+    validations:
+      required: false
