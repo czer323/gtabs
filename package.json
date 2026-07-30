@@ -6,15 +6,22 @@
   "scripts": {
     "build": "node build.mjs",
     "package": "rm -f gtabs-extension.zip && cd dist && (xattr -cr . 2>/dev/null || true) && zip -rX ../gtabs-extension.zip . -x '*.map' && cd .. && echo 'Packaged → gtabs-extension.zip'",
-    "test": "vitest run",
+    "test": "vitest run --reporter=dot",
     "test:watch": "vitest",
-    "dev": "node build.mjs --watch"
+    "dev": "node build.mjs --watch",
+    "lint": "oxlint --format agent",
+    "format": "oxfmt",
+    "format:check": "oxfmt --check",
+    "typecheck": "tsc --noEmit",
+    "check": "npm test && npm run format:check && npm run lint && npm run typecheck"
   },
   "devDependencies": {
     "@types/chrome": "^0.1.38",
     "@vitest/coverage-v8": "^2.1.0",
     "esbuild": "^0.24.0",
     "jsdom": "^29.0.1",
+    "oxfmt": "^0.61.0",
+    "oxlint": "^1.76.0",
     "typescript": "^5.7.0",
     "vitest": "^2.1.0"
   }
