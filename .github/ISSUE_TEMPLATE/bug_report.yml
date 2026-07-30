@@ -1,0 +1,106 @@
+name: Bug Report
+description: Report a bug or crash
+labels: ["bug"]
+body:
+  - type: textarea
+    id: description
+    attributes:
+      label: Description
+      description: What happened?
+    validations:
+      required: true
+
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to Reproduce
+      description: Minimal steps to reproduce the issue
+    validations:
+      required: true
+
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected Behavior
+      description: What did you expect to happen?
+    validations:
+      required: true
+
+  - type: textarea
+    id: error-output
+    attributes:
+      label: Error Output
+      description: Paste any error messages, console output, or stack traces from the extension's background console (chrome://extensions → Inspect views)
+      render: shell
+
+  - type: dropdown
+    id: platform
+    attributes:
+      label: Platform
+      options:
+        - macOS
+        - Windows
+        - Linux
+        - ChromeOS
+    validations:
+      required: true
+
+  - type: input
+    id: gtabs-version
+    attributes:
+      label: gTabs version
+      description: Found in chrome://extensions or manifest.json
+      placeholder: "e.g. 0.5.1"
+    validations:
+      required: true
+
+  - type: input
+    id: chrome-version
+    attributes:
+      label: Chrome version
+      description: Found in chrome://version
+      placeholder: "e.g. 127.0.6533.73"
+    validations:
+      required: true
+
+  - type: dropdown
+    id: provider
+    attributes:
+      label: LLM Provider
+      description: Which provider was selected when the bug occurred?
+      options:
+        - Chrome AI (Gemini Nano)
+        - OpenAI
+        - Anthropic
+        - Groq
+        - xAI (Grok)
+        - OpenRouter
+        - Ollama
+        - Custom (OpenAI-compatible)
+        - N/A (UI-only bug)
+
+  - type: dropdown
+    id: area
+    attributes:
+      label: Area
+      description: Which part of gTabs is affected?
+      options:
+        - Organize Tabs
+        - Popup UI
+        - Settings page
+        - Snooze
+        - Workspaces
+        - Smart Learning / Affinity
+        - Scheduled Re-org
+        - Context Menus
+        - Keyboard Shortcuts
+        - Auto-organize
+        - Undo
+        - Export / Import
+        - Other
+
+  - type: textarea
+    id: additional-context
+    attributes:
+      label: Additional context
+      description: Screenshots, config snippets (PINNED_GROUPS, DOMAIN_RULES), or any other relevant information.
