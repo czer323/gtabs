@@ -16,30 +16,30 @@ import type {
   RejectionEntry,
   Color,
   SnoozedTab,
-} from './types';
-import { DEFAULT_SETTINGS, DEFAULT_STATS, DEFAULT_COSTS } from './types';
+} from "./types";
+import { DEFAULT_SETTINGS, DEFAULT_STATS, DEFAULT_COSTS } from "./types";
 
 const K = {
-  settings: 'settings',
-  affinity: 'affinity',
-  suggestions: 'suggestions',
-  domainRules: 'domainRules',
-  undoSnapshot: 'undoSnapshot',
-  stats: 'stats',
-  costs: 'costs',
-  history: 'history',
-  workspaces: 'workspaces',
-  weightedAffinity: 'weightedAffinity',
-  affinityVersion: 'affinityVersion',
-  corrections: 'corrections',
-  rejections: 'rejections',
-  coOccurrence: 'coOccurrence',
-  groupColorPrefs: 'groupColorPrefs',
-  snoozedTabs: 'snoozedTabs',
+  settings: "settings",
+  affinity: "affinity",
+  suggestions: "suggestions",
+  domainRules: "domainRules",
+  undoSnapshot: "undoSnapshot",
+  stats: "stats",
+  costs: "costs",
+  history: "history",
+  workspaces: "workspaces",
+  weightedAffinity: "weightedAffinity",
+  affinityVersion: "affinityVersion",
+  corrections: "corrections",
+  rejections: "rejections",
+  coOccurrence: "coOccurrence",
+  groupColorPrefs: "groupColorPrefs",
+  snoozedTabs: "snoozedTabs",
 } as const;
 
 // API key is stored in local (not synced) for security
-const K_API_KEY_LOCAL = 'apiKeyLocal';
+const K_API_KEY_LOCAL = "apiKeyLocal";
 
 const MAX_HISTORY = 50;
 const MAX_CORRECTIONS = 100;
@@ -50,27 +50,34 @@ const DECAY_HALF_LIFE_MS = 14 * 24 * 60 * 60 * 1000; // 14 days
 let runtimeSessionCost = 0;
 
 const MULTI_TENANT_HOSTS = new Set([
-  'github.com', 'gitlab.com', 'reddit.com', 'youtube.com',
-  'medium.com', 'bitbucket.org', 'notion.so', 'figma.com',
+  "github.com",
+  "gitlab.com",
+  "reddit.com",
+  "youtube.com",
+  "medium.com",
+  "bitbucket.org",
+  "notion.so",
+  "figma.com",
 ]);
 
 function clampNumber(value: unknown, fallback: number, min: number, max: number): number {
-  const n = typeof value === 'number' ? value : Number(value);
+  const n = typeof value === "number" ? value : Number(value);
   if (!Number.isFinite(n)) return fallback;
   return Math.max(min, Math.min(max, n));
 }
 
 function sanitizeSettings(input: Partial<Settings>): Settings {
   const s = { ...DEFAULT_SETTINGS, ...input };
-  const reorgSchedule = s.reorgSchedule === 'daily' || s.reorgSchedule === 'weekly' || s.reorgSchedule === 'off'
-    ? s.reorgSchedule
-    : DEFAULT_SETTINGS.reorgSchedule;
+  const reorgSchedule =
+    s.reorgSchedule === "daily" || s.reorgSchedule === "weekly" || s.reorgSchedule === "off"
+      ? s.reorgSchedule
+      : DEFAULT_SETTINGS.reorgSchedule;
   return {
     ...s,
-    provider: typeof s.provider === 'string' ? s.provider : DEFAULT_SETTINGS.provider,
-    baseUrl: typeof s.baseUrl === 'string' ? s.baseUrl : DEFAULT_SETTINGS.baseUrl,
-    apiKey: typeof s.apiKey === 'string' ? s.apiKey.trim() : DEFAULT_SETTINGS.apiKey,
-    model: typeof s.model === 'string' ? s.model : DEFAULT_SETTINGS.model,
+    provider: typeof s.provider === "string" ? s.provider : DEFAULT_SETTINGS.provider,
+    baseUrl: typeof s.baseUrl === "string" ? s.baseUrl : DEFAULT_SETTINGS.baseUrl,
+    apiKey: typeof s.apiKey === "string" ? s.apiKey.trim() : DEFAULT_SETTINGS.apiKey,
+    model: typeof s.model === "string" ? s.model : DEFAULT_SETTINGS.model,
     autoTrigger: Boolean(s.autoTrigger),
     threshold: clampNumber(s.threshold, DEFAULT_SETTINGS.threshold, 0, 100),
     maxGroups: clampNumber(s.maxGroups, DEFAULT_SETTINGS.maxGroups, 1, 30),
@@ -78,16 +85,29 @@ function sanitizeSettings(input: Partial<Settings>): Settings {
     maxTitleLength: clampNumber(s.maxTitleLength, DEFAULT_SETTINGS.maxTitleLength, 10, 200),
     silentAutoAdd: Boolean(s.silentAutoAdd),
     autoPinApps: Boolean(s.autoPinApps),
-    staleTabThresholdHours: clampNumber(s.staleTabThresholdHours, DEFAULT_SETTINGS.staleTabThresholdHours, 1, 24 * 30),
+    staleTabThresholdHours: clampNumber(
+      s.staleTabThresholdHours,
+      DEFAULT_SETTINGS.staleTabThresholdHours,
+      1,
+      24 * 30,
+    ),
     enableCorrectionTracking: Boolean(s.enableCorrectionTracking),
     enableRejectionMemory: Boolean(s.enableRejectionMemory),
     enableGroupDrift: Boolean(s.enableGroupDrift),
     enablePatternMining: Boolean(s.enablePatternMining),
-    groupDriftThreshold: clampNumber(s.groupDriftThreshold, DEFAULT_SETTINGS.groupDriftThreshold, 0, 100),
+    groupDriftThreshold: clampNumber(
+      s.groupDriftThreshold,
+      DEFAULT_SETTINGS.groupDriftThreshold,
+      0,
+      100,
+    ),
     reorgSchedule,
     reorgTime: clampNumber(s.reorgTime, DEFAULT_SETTINGS.reorgTime, 0, 23),
     pinnedGroups: Array.isArray(s.pinnedGroups)
-      ? s.pinnedGroups.filter((x): x is string => typeof x === 'string' && x.trim().length > 0).map(x => x.trim()).slice(0, 50)
+      ? s.pinnedGroups
+          .filter((x): x is string => typeof x === "string" && x.trim().length > 0)
+          .map((x) => x.trim())
+          .slice(0, 50)
       : [],
     smartUngroup: Boolean(s.smartUngroup),
     spendingCapUSD: clampNumber(s.spendingCapUSD, DEFAULT_SETTINGS.spendingCapUSD, 0, 10_000),
@@ -112,8 +132,10 @@ export async function getSettings(): Promise<Settings> {
     base.apiKey = migratedKey;
     void Promise.all([
       chrome.storage.local.set({ [K_API_KEY_LOCAL]: migratedKey }),
-      chrome.storage.sync.set({ [K.settings]: { ...syncSettings, apiKey: '' } }),
-    ]).catch(() => { /* migration is best-effort; key remains in sync until next save */ });
+      chrome.storage.sync.set({ [K.settings]: { ...syncSettings, apiKey: "" } }),
+    ]).catch(() => {
+      /* migration is best-effort; key remains in sync until next save */
+    });
   }
   return base;
 }
@@ -123,7 +145,7 @@ export async function saveSettings(settings: Settings): Promise<void> {
   const { apiKey, ...syncSettings } = sanitized;
   await Promise.all([
     // Sync everything except the API key (keeps key off other devices)
-    chrome.storage.sync.set({ [K.settings]: { ...syncSettings, apiKey: '' } }),
+    chrome.storage.sync.set({ [K.settings]: { ...syncSettings, apiKey: "" } }),
     // Store API key locally only
     chrome.storage.local.set({ [K_API_KEY_LOCAL]: apiKey }),
   ]);
@@ -134,9 +156,9 @@ export async function saveSettings(settings: Settings): Promise<void> {
 export function extractPathKey(urlStr: string): string | null {
   try {
     const u = new URL(urlStr);
-    const hostname = u.hostname.replace(/^www\./, '');
+    const hostname = u.hostname.replace(/^www\./, "");
     if (!MULTI_TENANT_HOSTS.has(hostname)) return null;
-    const segments = u.pathname.split('/').filter(Boolean);
+    const segments = u.pathname.split("/").filter(Boolean);
     if (segments.length === 0) return null;
     return `${hostname}/${segments[0]}`;
   } catch {
@@ -182,8 +204,8 @@ export function pickBestWeightedGroup(
 ): string | null {
   const rejectSet = new Set(
     rejections
-      .filter(r => r.domain === domain && (now - r.timestamp) < REJECTION_MAX_AGE_MS)
-      .map(r => r.rejectedGroup),
+      .filter((r) => r.domain === domain && now - r.timestamp < REJECTION_MAX_AGE_MS)
+      .map((r) => r.rejectedGroup),
   );
 
   let bestName: string | null = null;
@@ -212,7 +234,7 @@ export async function updateWeightedAffinity(
     for (const tab of group.tabs) {
       try {
         const u = new URL(tab.url);
-        const domain = u.hostname.replace(/^www\./, '');
+        const domain = u.hostname.replace(/^www\./, "");
         const keys = [domain];
         const pathKey = extractPathKey(tab.url);
         if (pathKey) keys.push(pathKey);
@@ -224,7 +246,9 @@ export async function updateWeightedAffinity(
           g.lastUsed = now;
           current[key].groups[group.name] = g;
         }
-      } catch { /* skip invalid URLs */ }
+      } catch {
+        /* skip invalid URLs */
+      }
     }
   }
 
@@ -239,7 +263,7 @@ export async function getAffinity(): Promise<AffinityMap> {
 
   for (const [key, entry] of Object.entries(weighted)) {
     // Only include domain-level entries (no path keys) in flat map
-    if (key.includes('/')) continue;
+    if (key.includes("/")) continue;
     let bestName: string | null = null;
     let bestWeight = 0;
     let bestLastUsed = 0;
@@ -262,10 +286,13 @@ export async function updateAffinity(suggestions: GroupSuggestion[]): Promise<vo
   await updateWeightedAffinity(suggestions, 1);
 }
 
-export function formatWeightedAffinityHints(weighted: WeightedAffinityMap, now = Date.now()): string {
+export function formatWeightedAffinityHints(
+  weighted: WeightedAffinityMap,
+  now = Date.now(),
+): string {
   const lines: string[] = [];
   for (const [key, entry] of Object.entries(weighted)) {
-    if (key.includes('/')) continue; // skip path-level in prompt
+    if (key.includes("/")) continue; // skip path-level in prompt
     let bestName: string | null = null;
     let bestWeight = 0;
     let bestCount = 0;
@@ -281,13 +308,13 @@ export function formatWeightedAffinityHints(weighted: WeightedAffinityMap, now =
     }
     if (!bestName || bestWeight <= 0.5) continue;
     const daysAgo = Math.round((now - bestLastUsed) / (24 * 60 * 60 * 1000));
-    const recency = daysAgo <= 1 ? 'recent' : `${daysAgo}d ago`;
+    const recency = daysAgo <= 1 ? "recent" : `${daysAgo}d ago`;
     lines.push(`  ${key} \u2192 "${bestName}" (${bestCount}x, ${recency})`);
   }
   if (lines.length > 20) lines.length = 20;
   return lines.length
-    ? `\nUser preferences (learned domain associations):\n${lines.join('\n')}\n`
-    : '';
+    ? `\nUser preferences (learned domain associations):\n${lines.join("\n")}\n`
+    : "";
 }
 
 // --- Suggestions (local) ---
@@ -310,13 +337,15 @@ export async function getDomainRules(): Promise<DomainRule[]> {
 
 export async function saveDomainRules(rules: DomainRule[]): Promise<void> {
   const sanitized = rules
-    .filter((r): r is DomainRule => Boolean(r && typeof r.domain === 'string' && typeof r.groupName === 'string'))
-    .map(r => ({
+    .filter((r): r is DomainRule =>
+      Boolean(r && typeof r.domain === "string" && typeof r.groupName === "string"),
+    )
+    .map((r) => ({
       domain: r.domain.trim().toLowerCase(),
       groupName: r.groupName.trim(),
       color: r.color,
     }))
-    .filter(r => r.domain.length > 0 && r.groupName.length > 0)
+    .filter((r) => r.domain.length > 0 && r.groupName.length > 0)
     .slice(0, MAX_DOMAIN_RULES);
   await chrome.storage.sync.set({ [K.domainRules]: sanitized });
 }
@@ -375,10 +404,20 @@ export async function getCosts(): Promise<CostTotals> {
   const data = await chrome.storage.local.get({ [K.costs]: null });
   const stored = data[K.costs] as CostTotals | null;
   if (!stored) return { ...DEFAULT_COSTS, byProvider: {}, sessionCost: runtimeSessionCost };
-  return { ...DEFAULT_COSTS, ...stored, sessionCost: runtimeSessionCost, byProvider: { ...stored.byProvider } };
+  return {
+    ...DEFAULT_COSTS,
+    ...stored,
+    sessionCost: runtimeSessionCost,
+    byProvider: { ...stored.byProvider },
+  };
 }
 
-export async function addCost(provider: string, inputTokens: number, outputTokens: number, cost: number): Promise<CostTotals> {
+export async function addCost(
+  provider: string,
+  inputTokens: number,
+  outputTokens: number,
+  cost: number,
+): Promise<CostTotals> {
   const current = await getCosts();
   const bp = current.byProvider[provider] || { inputTokens: 0, outputTokens: 0, cost: 0 };
   current.totalInputTokens += inputTokens;
@@ -405,11 +444,21 @@ export async function addHistory(suggestions: GroupSuggestion[]): Promise<void> 
   const history = await getHistory();
   const entry: HistoryEntry = {
     timestamp: Date.now(),
-    groups: suggestions.map(g => ({
+    groups: suggestions.map((g) => ({
       name: g.name,
-      domains: [...new Set(g.tabs.map(t => {
-        try { return new URL(t.url).hostname; } catch { return ''; }
-      }).filter(Boolean))],
+      domains: [
+        ...new Set(
+          g.tabs
+            .map((t) => {
+              try {
+                return new URL(t.url).hostname;
+              } catch {
+                return "";
+              }
+            })
+            .filter(Boolean),
+        ),
+      ],
     })),
   };
   history.push(entry);
@@ -418,7 +467,7 @@ export async function addHistory(suggestions: GroupSuggestion[]): Promise<void> 
 }
 
 export function summarizeHistory(history: HistoryEntry[]): string {
-  if (!history.length) return '';
+  if (!history.length) return "";
   // Build domain→group frequency map from recent history
   const freq: Record<string, Record<string, number>> = {};
   const recent = history.slice(-20);
@@ -437,8 +486,8 @@ export function summarizeHistory(history: HistoryEntry[]): string {
     if (top[1] >= 3) lines.push(`  ${domain} → "${top[0]}" (${top[1]}x)`);
   }
   return lines.length
-    ? `\nGrouping history (frequently used assignments):\n${lines.join('\n')}\n`
-    : '';
+    ? `\nGrouping history (frequently used assignments):\n${lines.join("\n")}\n`
+    : "";
 }
 
 // --- Corrections (local) ---
@@ -456,8 +505,8 @@ export async function addCorrections(entry: CorrectionEntry): Promise<void> {
 }
 
 export async function summarizeCorrections(corrections?: CorrectionEntry[]): Promise<string> {
-  const entries = corrections ?? await getCorrections();
-  if (!entries.length) return '';
+  const entries = corrections ?? (await getCorrections());
+  if (!entries.length) return "";
   const freq: Record<string, Record<string, number>> = {};
   const recent = entries.slice(-30);
   for (const entry of recent) {
@@ -476,8 +525,8 @@ export async function summarizeCorrections(corrections?: CorrectionEntry[]): Pro
   }
   if (lines.length > 15) lines.length = 15;
   return lines.length
-    ? `\nUser corrections (strong signals — respect these):\n${lines.join('\n')}\n`
-    : '';
+    ? `\nUser corrections (strong signals — respect these):\n${lines.join("\n")}\n`
+    : "";
 }
 
 // --- Rejections (local) ---
@@ -486,7 +535,7 @@ export async function getRejections(): Promise<RejectionEntry[]> {
   const data = await chrome.storage.local.get({ [K.rejections]: [] });
   const all = data[K.rejections] as RejectionEntry[];
   const now = Date.now();
-  return all.filter(r => (now - r.timestamp) < REJECTION_MAX_AGE_MS);
+  return all.filter((r) => now - r.timestamp < REJECTION_MAX_AGE_MS);
 }
 
 export async function addRejection(domain: string, rejectedGroup: string): Promise<void> {
@@ -503,15 +552,23 @@ export async function addRejections(entries: RejectionEntry[]): Promise<void> {
   await chrome.storage.local.set({ [K.rejections]: current });
 }
 
-export function isRejected(domain: string, groupName: string, rejections: RejectionEntry[], now = Date.now()): boolean {
+export function isRejected(
+  domain: string,
+  groupName: string,
+  rejections: RejectionEntry[],
+  now = Date.now(),
+): boolean {
   return rejections.some(
-    r => r.domain === domain && r.rejectedGroup === groupName && (now - r.timestamp) < REJECTION_MAX_AGE_MS,
+    (r) =>
+      r.domain === domain &&
+      r.rejectedGroup === groupName &&
+      now - r.timestamp < REJECTION_MAX_AGE_MS,
   );
 }
 
 export async function summarizeRejections(rejections?: RejectionEntry[]): Promise<string> {
-  const entries = rejections ?? await getRejections();
-  if (!entries.length) return '';
+  const entries = rejections ?? (await getRejections());
+  if (!entries.length) return "";
   const freq: Record<string, Set<string>> = {};
   for (const r of entries) {
     if (!freq[r.domain]) freq[r.domain] = new Set();
@@ -525,8 +582,8 @@ export async function summarizeRejections(rejections?: RejectionEntry[]): Promis
   }
   if (lines.length > 15) lines.length = 15;
   return lines.length
-    ? `\nRejected groupings (user explicitly removed these):\n${lines.join('\n')}\n`
-    : '';
+    ? `\nRejected groupings (user explicitly removed these):\n${lines.join("\n")}\n`
+    : "";
 }
 
 // --- Group Color Preferences (local) ---
@@ -560,7 +617,7 @@ export async function addSnoozedTab(entry: SnoozedTab): Promise<void> {
 
 export async function removeSnoozedTab(id: string): Promise<void> {
   const current = await getSnoozedTabs();
-  const updated = current.filter(t => t.id !== id);
+  const updated = current.filter((t) => t.id !== id);
   await chrome.storage.local.set({ [K.snoozedTabs]: updated });
 }
 
@@ -580,7 +637,7 @@ export async function updateCoOccurrence(history: HistoryEntry[]): Promise<void>
       const domains = group.domains.slice(0, 20); // cap per group
       for (let i = 0; i < domains.length; i++) {
         for (let j = i + 1; j < domains.length; j++) {
-          const pair = [domains[i], domains[j]].sort().join('|');
+          const pair = [domains[i], domains[j]].sort().join("|");
           matrix[pair] = (matrix[pair] ?? 0) + 1;
         }
       }
@@ -591,16 +648,18 @@ export async function updateCoOccurrence(history: HistoryEntry[]): Promise<void>
 }
 
 export async function summarizeCoOccurrence(matrix?: Record<string, number>): Promise<string> {
-  const data = matrix ?? await getCoOccurrence();
-  const entries = Object.entries(data).filter(([, count]) => count >= 3).sort((a, b) => b[1] - a[1]);
-  if (!entries.length) return '';
+  const data = matrix ?? (await getCoOccurrence());
+  const entries = Object.entries(data)
+    .filter(([, count]) => count >= 3)
+    .sort((a, b) => b[1] - a[1]);
+  if (!entries.length) return "";
 
   // Cluster connected domains
   const clusters: string[][] = [];
   const assigned = new Set<string>();
 
   for (const [pair] of entries.slice(0, 30)) {
-    const [a, b] = pair.split('|');
+    const [a, b] = pair.split("|");
     if (assigned.has(a) && assigned.has(b)) continue;
 
     let found = false;
@@ -622,33 +681,51 @@ export async function summarizeCoOccurrence(matrix?: Record<string, number>): Pr
   }
 
   const lines = clusters
-    .filter(c => c.length >= 2)
+    .filter((c) => c.length >= 2)
     .slice(0, 10)
-    .map(c => `  Frequently grouped together: [${c.join(', ')}]`);
+    .map((c) => `  Frequently grouped together: [${c.join(", ")}]`);
 
   return lines.length
-    ? `\nCo-occurrence patterns (domains often in the same group):\n${lines.join('\n')}\n`
-    : '';
+    ? `\nCo-occurrence patterns (domains often in the same group):\n${lines.join("\n")}\n`
+    : "";
 }
 
 // --- Export / Import ---
 
 export async function exportAll(): Promise<ExportData> {
-  const [settings, affinity, domainRules, workspaces, weightedAffinity, corrections, rejections] = await Promise.all([
-    getSettings(), getAffinity(), getDomainRules(), getWorkspaces(),
-    getWeightedAffinity(), getCorrections(), getRejections(),
-  ]);
+  const [settings, affinity, domainRules, workspaces, weightedAffinity, corrections, rejections] =
+    await Promise.all([
+      getSettings(),
+      getAffinity(),
+      getDomainRules(),
+      getWorkspaces(),
+      getWeightedAffinity(),
+      getCorrections(),
+      getRejections(),
+    ]);
   // Strip API key from export to prevent accidental exposure
   const { apiKey: _stripped, ...safeSettings } = settings;
-  return { settings: { ...safeSettings, apiKey: '' } as Settings, affinity, domainRules, workspaces, weightedAffinity, corrections, rejections };
+  return {
+    settings: { ...safeSettings, apiKey: "" } as Settings,
+    affinity,
+    domainRules,
+    workspaces,
+    weightedAffinity,
+    corrections,
+    rejections,
+  };
 }
 
 export async function importAll(data: ExportData): Promise<void> {
-  if (!data || typeof data !== 'object') throw new Error('Invalid import data');
+  if (!data || typeof data !== "object") throw new Error("Invalid import data");
 
   // Preserve existing API key — never overwrite from import
   const currentSettings = await getSettings();
-  const importedSettings = { ...DEFAULT_SETTINGS, ...data.settings, apiKey: currentSettings.apiKey };
+  const importedSettings = {
+    ...DEFAULT_SETTINGS,
+    ...data.settings,
+    apiKey: currentSettings.apiKey,
+  };
 
   const promises: Promise<void>[] = [
     saveSettings(importedSettings),
@@ -657,11 +734,17 @@ export async function importAll(data: ExportData): Promise<void> {
     saveDomainRules(Array.isArray(data.domainRules) ? data.domainRules : []),
   ];
 
-  if (data.weightedAffinity && typeof data.weightedAffinity === 'object' && !Array.isArray(data.weightedAffinity)) {
-    promises.push(chrome.storage.local.set({
-      [K.weightedAffinity]: data.weightedAffinity,
-      [K.affinityVersion]: 2,
-    }));
+  if (
+    data.weightedAffinity &&
+    typeof data.weightedAffinity === "object" &&
+    !Array.isArray(data.weightedAffinity)
+  ) {
+    promises.push(
+      chrome.storage.local.set({
+        [K.weightedAffinity]: data.weightedAffinity,
+        [K.affinityVersion]: 2,
+      }),
+    );
   }
   if (Array.isArray(data.corrections)) {
     promises.push(chrome.storage.local.set({ [K.corrections]: data.corrections }));

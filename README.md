@@ -3,16 +3,16 @@
 <div align="center">
   <br/>
 
-  **Your tabs are a mess. One click fixes that.**
+**Your tabs are a mess. One click fixes that.**
 
-  gTabs uses any LLM to intelligently organize your Chrome tabs into color-coded groups.
-  It learns from your behavior, remembers your corrections, and gets smarter over time.
+gTabs uses any LLM to intelligently organize your Chrome tabs into color-coded groups.
+It learns from your behavior, remembers your corrections, and gets smarter over time.
 
   <br/>
 
-  [Star on GitHub](https://github.com/vaddisrinivas/gtabs) · [Install](https://github.com/vaddisrinivas/gtabs/releases) · [Report Issue](https://github.com/vaddisrinivas/gtabs/issues)
+[Star on GitHub](https://github.com/vaddisrinivas/gtabs) · [Install](https://github.com/vaddisrinivas/gtabs/releases) · [Report Issue](https://github.com/vaddisrinivas/gtabs/issues)
 
-  [![✅ Merged — xyNNN/awesome-chrome](https://img.shields.io/badge/%E2%9C%85%20Merged-xyNNN%2Fawesome--chrome-green?style=flat-square)](https://github.com/xyNNN/awesome-chrome)
+[![✅ Merged — xyNNN/awesome-chrome](https://img.shields.io/badge/%E2%9C%85%20Merged-xyNNN%2Fawesome--chrome-green?style=flat-square)](https://github.com/xyNNN/awesome-chrome)
 
   <br/>
 </div>
@@ -41,8 +41,8 @@
 
 ## Screenshots
 
-| Settings & Providers | Smart Learning | Organized Tabs |
-|:---:|:---:|:---:|
+|                    Settings & Providers                    |                             Smart Learning                             |                        Organized Tabs                        |
+| :--------------------------------------------------------: | :--------------------------------------------------------------------: | :----------------------------------------------------------: |
 | ![Settings](store-assets/screenshot-settings-1280x800.png) | ![Smart Learning](store-assets/screenshot-smart-learning-1280x800.png) | ![Organized](store-assets/screenshot-organized-1280x800.png) |
 
 ---
@@ -51,57 +51,57 @@
 
 ### Organize
 
-| | |
-|---|---|
-| **One-click Organize All** | AI groups every tab in your window by topic |
-| **Ungrouped Only** | Only touches tabs not already in a group |
-| **Suggestion-first UX** | Review, rename, recolor, remove — then apply |
-| **Undo** | Instantly restores the previous tab arrangement |
-| **Smart Merge** | Pre-assigns tabs to existing groups by title similarity before calling the LLM |
+|                            |                                                                                |
+| -------------------------- | ------------------------------------------------------------------------------ |
+| **One-click Organize All** | AI groups every tab in your window by topic                                    |
+| **Ungrouped Only**         | Only touches tabs not already in a group                                       |
+| **Suggestion-first UX**    | Review, rename, recolor, remove — then apply                                   |
+| **Undo**                   | Instantly restores the previous tab arrangement                                |
+| **Smart Merge**            | Pre-assigns tabs to existing groups by title similarity before calling the LLM |
 
 ### Learn
 
-| | |
-|---|---|
-| **Weighted Affinity** | Tracks how often each domain is placed in each group, decays stale patterns over 14 days |
-| **Path-level Affinity** | `github.com/myorg` maps separately from `github.com/trending` for multi-tenant sites |
+|                         |                                                                                               |
+| ----------------------- | --------------------------------------------------------------------------------------------- |
+| **Weighted Affinity**   | Tracks how often each domain is placed in each group, decays stale patterns over 14 days      |
+| **Path-level Affinity** | `github.com/myorg` maps separately from `github.com/trending` for multi-tenant sites          |
 | **Correction Tracking** | When you rename groups or move tabs before applying, those edits are remembered as 3x signals |
-| **Rejection Memory** | When you remove a suggested group, gTabs remembers to avoid that grouping for 30 days |
-| **Pattern Mining** | Discovers domains that are frequently grouped together and uses them as co-occurrence hints |
-| **Opener Awareness** | New tabs opened from an existing grouped tab prefer joining that group |
+| **Rejection Memory**    | When you remove a suggested group, gTabs remembers to avoid that grouping for 30 days         |
+| **Pattern Mining**      | Discovers domains that are frequently grouped together and uses them as co-occurrence hints   |
+| **Opener Awareness**    | New tabs opened from an existing grouped tab prefer joining that group                        |
 
 ### Maintain
 
-| | |
-|---|---|
-| **Scheduled Re-org** | Daily or weekly automatic re-organization at a configurable time |
-| **Pinned Groups** | Mark groups as permanent — they survive re-organization |
-| **Group Drift Detection** | Warns when groups become incoherent and may need refreshing |
+|                             |                                                                               |
+| --------------------------- | ----------------------------------------------------------------------------- |
+| **Scheduled Re-org**        | Daily or weekly automatic re-organization at a configurable time              |
+| **Pinned Groups**           | Mark groups as permanent — they survive re-organization                       |
+| **Group Drift Detection**   | Warns when groups become incoherent and may need refreshing                   |
 | **Merge/Split Suggestions** | Detects overlapping groups (>60%) and oversized groups (>10 tabs, >5 domains) |
-| **Stale Tab Purge** | Remove inactive tabs older than a configurable threshold |
+| **Stale Tab Purge**         | Remove inactive tabs older than a configurable threshold                      |
 
 ### Tools
 
-| | |
-|---|---|
-| **Focus Mode** | Collapses all groups except the active one |
-| **Sort Groups** | Alphabetically sorts tabs by domain within each group |
-| **Clear Groups** | Ungroups everything in the current window |
-| **Duplicate Detection** | Finds tabs with the same URL |
-| **Zero-LLM Fast Routing** | Routes new tabs into existing groups via affinity — no API calls |
-| **Domain Rules** | Hard-wire `github.com` or `*.example.com` to `Dev`, always, skipping the LLM entirely |
+|                           |                                                                                       |
+| ------------------------- | ------------------------------------------------------------------------------------- |
+| **Focus Mode**            | Collapses all groups except the active one                                            |
+| **Sort Groups**           | Alphabetically sorts tabs by domain within each group                                 |
+| **Clear Groups**          | Ungroups everything in the current window                                             |
+| **Duplicate Detection**   | Finds tabs with the same URL                                                          |
+| **Zero-LLM Fast Routing** | Routes new tabs into existing groups via affinity — no API calls                      |
+| **Domain Rules**          | Hard-wire `github.com` or `*.example.com` to `Dev`, always, skipping the LLM entirely |
 
 ### Providers
 
-| Provider | Cost | Setup |
-|----------|------|-------|
-| **Groq** | Free (rate limited) | [Get key](https://console.groq.com/keys) — no credit card |
-| **Grok (xAI)** | $25 free credit | [Get key](https://console.x.ai) |
-| **OpenRouter** | Free models available | [Get key](https://openrouter.ai/keys) |
-| **Ollama** | Free (local) | [Install](https://ollama.com/download) — no key needed |
-| **Chrome AI** | Free (local) | [Setup guide below](#chrome-ai-gemini-nano-setup) — two flags, no account |
-| **Anthropic** | Paid | [Get key](https://console.anthropic.com/settings/keys) |
-| **OpenAI** | Paid | [Get key](https://platform.openai.com/api-keys) |
+| Provider       | Cost                  | Setup                                                                     |
+| -------------- | --------------------- | ------------------------------------------------------------------------- |
+| **Groq**       | Free (rate limited)   | [Get key](https://console.groq.com/keys) — no credit card                 |
+| **Grok (xAI)** | $25 free credit       | [Get key](https://console.x.ai)                                           |
+| **OpenRouter** | Free models available | [Get key](https://openrouter.ai/keys)                                     |
+| **Ollama**     | Free (local)          | [Install](https://ollama.com/download) — no key needed                    |
+| **Chrome AI**  | Free (local)          | [Setup guide below](#chrome-ai-gemini-nano-setup) — two flags, no account |
+| **Anthropic**  | Paid                  | [Get key](https://console.anthropic.com/settings/keys)                    |
+| **OpenAI**     | Paid                  | [Get key](https://platform.openai.com/api-keys)                           |
 
 ---
 
@@ -117,14 +117,17 @@ Chrome AI runs Gemini Nano directly inside Chrome — no API key, no account, no
 ### Steps
 
 1. Paste the following URL into Chrome's address bar and set the flag to **Enabled**:
+
    ```
    chrome://flags/#prompt-api-for-gemini-nano
    ```
 
 2. Paste this URL and set to **Enabled BypassPerfRequirement**:
+
    ```
    chrome://flags/#optimization-guide-on-device-model
    ```
+
    > The BypassPerfRequirement variant allows model download on any hardware. Without it, Chrome may skip the download on lower-spec machines.
 
 3. Click **Relaunch** at the bottom of the flags page.
@@ -207,21 +210,22 @@ Background Service Worker
    '-- Chrome APIs (tabs, tabGroups, alarms, storage)
 ```
 
-| File | Role |
-|------|------|
-| `types.ts` | All interfaces — weighted affinity, corrections, rejections, settings |
-| `storage.ts` | Chrome storage wrapper — migration, decay math, summarizers |
-| `grouper.ts` | Prompt builder, JSON parser, title matching, domain rules |
-| `llm.ts` | Provider-agnostic LLM client with token counting |
-| `background.ts` | Service worker — orchestration, drift detection, scheduled re-org |
-| `popup.ts/html` | Action popup — organize, pin, correct, reject, merge/split |
-| `options.ts/html` | Settings — providers, learning toggles, schedules, pinned groups |
+| File              | Role                                                                  |
+| ----------------- | --------------------------------------------------------------------- |
+| `types.ts`        | All interfaces — weighted affinity, corrections, rejections, settings |
+| `storage.ts`      | Chrome storage wrapper — migration, decay math, summarizers           |
+| `grouper.ts`      | Prompt builder, JSON parser, title matching, domain rules             |
+| `llm.ts`          | Provider-agnostic LLM client with token counting                      |
+| `background.ts`   | Service worker — orchestration, drift detection, scheduled re-org     |
+| `popup.ts/html`   | Action popup — organize, pin, correct, reject, merge/split            |
+| `options.ts/html` | Settings — providers, learning toggles, schedules, pinned groups      |
 
 ---
 
 ## Settings
 
 ### Behavior
+
 - **Max Groups** (2–15) — limit the number of groups AI creates
 - **Auto-organize Threshold** (2–25) — trigger when ungrouped tabs exceed this
 - **Title Truncation** (20–200) — max tab title chars sent to the LLM
@@ -232,6 +236,7 @@ Background Service Worker
 - **Auto-pin Web Apps** — pin Gmail, Calendar, Jira, Spotify to the left
 
 ### Smart Learning
+
 - **Correction Tracking** — learn from your edits before applying (on by default)
 - **Rejection Memory** — remember removed groups and avoid them (on by default)
 - **Group Drift Detection** — warn when groups become incoherent
@@ -239,10 +244,12 @@ Background Service Worker
 - **Drift Threshold** (20–80%) — coherence below which a group is flagged
 
 ### Scheduled Re-org
+
 - **Schedule** — Off / Daily / Weekly
 - **Time of Day** (0–23) — hour when scheduled re-org runs
 
 ### Pinned Groups
+
 - Groups marked as pinned survive all re-organization
 - Pin from popup (pin icon on each suggestion card) or settings page
 
@@ -250,9 +257,9 @@ Background Service Worker
 
 ## Keyboard Shortcuts
 
-| Shortcut | Action |
-|----------|--------|
-| `Cmd+Shift+G` / `Ctrl+Shift+G` | Organize all tabs |
+| Shortcut                       | Action             |
+| ------------------------------ | ------------------ |
+| `Cmd+Shift+G` / `Ctrl+Shift+G` | Organize all tabs  |
 | `Cmd+Shift+Z` / `Ctrl+Shift+Z` | Undo last grouping |
 
 ---
