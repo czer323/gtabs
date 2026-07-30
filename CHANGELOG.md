@@ -1,13 +1,17 @@
 # Changelog
 
 ## [0.5.1] - 2026-05-17
+
 ### Fixed
+
 - Rebuild context menus with a full `removeAll()` pass so stale child IDs cannot break service worker startup.
 - Serialize overlapping context menu rebuilds from tab group events.
 - Ignore duplicate context menu create errors during rebuild so Chrome reloads stay clean.
 
 ## [0.5.0] - 2026-04-09
+
 ### Added
+
 - Tab Snooze — hide tabs temporarily and restore them at a chosen time.
 - Workspace Management — save and restore full browser sessions with tab groups intact.
 - Smart Ungrouping — tabs automatically leave a group when navigating to an unrelated domain.
@@ -20,45 +24,59 @@
 - Spend limit (USD cap) to control API costs for cloud providers.
 
 ### Changed
+
 - Tabbed Settings — reorganized into Provider, Behavior, Rules, and Tools tabs.
 - Streamlined Popup — cleaner layout for faster organizing.
 - Keyboard Navigation — arrow keys and Enter to move through suggestions.
 - Chrome AI provider card now shows a step-by-step setup guide when flags are not yet enabled.
 
 ### Fixed
+
 - Better error feedback for failed actions.
 - Local-only API key storage — keys no longer sync across devices.
 - Input sanitization to block prompt injection attempts.
 - Improved recovery when tab state changes during batch actions.
 
 ## [0.4.8] - 2026-04-10
+
 ### Added
+
 - New feature enhancements.
 
 ### Changed
+
 - Improvements to existing features.
 
 ### Fixed
+
 - Bug fixes and stability improvements.
 
 ### Security
+
 - Addressed security vulnerabilities.
 
 ### Deprecated
+
 - Some deprecated features that will be removed in future releases.
 
 ## [0.4.0] - 2025-12-15
+
 ### Added
+
 - Initial version with foundational features.
 
 ### Changed
+
 - Changes to improve performance.
 
 ### Fixed
+
 - Initial bug fixes.
 
 ### Security
+
 - Security updates included.
 
 ### Deprecated
+
 - Initial deprecations noted.

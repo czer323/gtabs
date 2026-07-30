@@ -1,28 +1,35 @@
-import { completeWithUsage } from './llm';
+import { completeWithUsage } from "./llm";
 import type {
-  TabInfo, RawGroup, GroupSuggestion, Settings, AffinityMap, DomainRule, Color,
-  WeightedAffinityMap, RejectionEntry,
-} from './types';
-import { COLORS } from './types';
-import { extractPathKey, computeDecayedWeight, pickBestWeightedGroup } from './storage';
+  TabInfo,
+  RawGroup,
+  GroupSuggestion,
+  Settings,
+  AffinityMap,
+  DomainRule,
+  Color,
+  WeightedAffinityMap,
+  RejectionEntry,
+} from "./types";
+import { COLORS } from "./types";
+import { extractPathKey, computeDecayedWeight, pickBestWeightedGroup } from "./storage";
 
 export function truncateTitle(title: string, maxLen: number): string {
   if (title.length <= maxLen) return title;
-  return title.slice(0, maxLen - 1) + '\u2026';
+  return title.slice(0, maxLen - 1) + "\u2026";
 }
 
 function hostnameCandidates(hostname: string): string[] {
   const normalized = hostname.toLowerCase();
-  const stripped = normalized.replace(/^www\./, '');
+  const stripped = normalized.replace(/^www\./, "");
   return stripped === normalized ? [normalized] : [normalized, stripped];
 }
 
 function escapeRegex(text: string): string {
-  return text.replace(/[.+?^${}()|[\]\\]/g, '\\$&');
+  return text.replace(/[.+?^${}()|[\]\\]/g, "\\$&");
 }
 
 function globMatchesHostname(pattern: string, hostname: string): boolean {
-  const regex = new RegExp(`^${pattern.split('*').map(escapeRegex).join('.*')}$`);
+  const regex = new RegExp(`^${pattern.split("*").map(escapeRegex).join(".*")}$`);
   return regex.test(hostname);
 }
 
@@ -34,7 +41,7 @@ function findMatchingDomainRule(hostname: string, rules: DomainRule[]): DomainRu
   for (const rule of rules) {
     const domain = rule.domain.trim().toLowerCase();
     if (!domain) continue;
-    if (domain.includes('*')) wildcardRules.push(rule);
+    if (domain.includes("*")) wildcardRules.push(rule);
     else exactRules.set(domain, rule);
   }
 
@@ -46,22 +53,30 @@ function findMatchingDomainRule(hostname: string, rules: DomainRule[]): DomainRu
   let wildcardMatch: DomainRule | undefined;
   for (const rule of wildcardRules) {
     const pattern = rule.domain.trim().toLowerCase();
-    if (candidates.some(candidate => globMatchesHostname(pattern, candidate))) {
+    if (candidates.some((candidate) => globMatchesHostname(pattern, candidate))) {
       wildcardMatch = rule;
     }
   }
   return wildcardMatch;
 }
 
-export function applyDomainRules(tabs: TabInfo[], rules: DomainRule[]): { matched: GroupSuggestion[]; remaining: TabInfo[] } {
+export function applyDomainRules(
+  tabs: TabInfo[],
+  rules: DomainRule[],
+): { matched: GroupSuggestion[]; remaining: TabInfo[] } {
   if (!rules.length) return { matched: [], remaining: tabs };
 
   const groups = new Map<string, { rule: DomainRule; tabs: TabInfo[] }>();
   const remaining: TabInfo[] = [];
 
   for (const tab of tabs) {
-    let hostname = '';
-    try { hostname = new URL(tab.url).hostname; } catch { remaining.push(tab); continue; }
+    let hostname = "";
+    try {
+      hostname = new URL(tab.url).hostname;
+    } catch {
+      remaining.push(tab);
+      continue;
+    }
 
     const rule = findMatchingDomainRule(hostname, rules);
     if (rule) {
@@ -88,15 +103,19 @@ export function inferTargetGroup(
   affinity: AffinityMap,
   weightedAffinity?: WeightedAffinityMap,
   rejections?: RejectionEntry[],
-): { name: string, color?: Color } | null {
-  let hostname = '';
-  try { hostname = new URL(urlStr).hostname; } catch { return null; }
+): { name: string; color?: Color } | null {
+  let hostname = "";
+  try {
+    hostname = new URL(urlStr).hostname;
+  } catch {
+    return null;
+  }
 
   // 1. Domain rules (highest priority)
   const rule = findMatchingDomainRule(hostname, rules);
   if (rule) return { name: rule.groupName, color: rule.color };
 
-  const stripped = hostname.replace(/^www\./, '');
+  const stripped = hostname.replace(/^www\./, "");
 
   // 2. Weighted affinity — path-level first, then domain-level
   if (weightedAffinity) {
@@ -130,13 +149,13 @@ export function findDuplicates(tabs: TabInfo[]): TabInfo[][] {
     let key = tab.url;
     try {
       const u = new URL(key);
-      u.hash = '';
-      key = u.toString().replace(/\/$/, '');
+      u.hash = "";
+      key = u.toString().replace(/\/$/, "");
     } catch {}
     if (!byUrl.has(key)) byUrl.set(key, []);
     byUrl.get(key)!.push(tab);
   }
-  return Array.from(byUrl.values()).filter(g => g.length > 1);
+  return Array.from(byUrl.values()).filter((g) => g.length > 1);
 }
 
 export interface ExtraHints {
@@ -150,10 +169,10 @@ export interface ExtraHints {
 /** Strip characters that could break JSON or inject prompt instructions */
 function sanitizeForPrompt(text: string): string {
   return text
-    .replace(/[\u0000-\u001F\u007F]/g, ' ')
-    .replace(/[\r\n]+/g, ' ')
+    .replace(/[\u0000-\u001F\u007F]/g, " ")
+    .replace(/[\r\n]+/g, " ")
     .replace(/["`]/g, "'")
-    .replace(/\s+/g, ' ')
+    .replace(/\s+/g, " ")
     .trim();
 }
 
@@ -162,30 +181,36 @@ export function buildPrompt(
   maxGroups: number,
   affinity: AffinityMap,
   maxTitleLength = 80,
-  historyHint = '',
+  historyHint = "",
   extraHints?: ExtraHints,
 ): string {
-  const tabList = tabs.map(t =>
-    `  - id: ${t.id} | "${sanitizeForPrompt(truncateTitle(t.title, maxTitleLength))}" | ${sanitizeForPrompt(t.url)}`
-  ).join('\n');
+  const tabList = tabs
+    .map(
+      (t) =>
+        `  - id: ${t.id} | "${sanitizeForPrompt(truncateTitle(t.title, maxTitleLength))}" | ${sanitizeForPrompt(t.url)}`,
+    )
+    .join("\n");
 
   // Use weighted affinity hint if available, otherwise fall back to flat
-  let hints = '';
+  let hints = "";
   if (extraHints?.affinityHint) {
     hints = extraHints.affinityHint;
   } else {
     const affinityEntries = Object.entries(affinity);
-    hints = affinityEntries.length > 0
-      ? `\nUser preferences (group these domains together):\n${affinityEntries.map(([d, g]) => `  ${d} \u2192 "${g}"`).join('\n')}\n`
-      : '';
+    hints =
+      affinityEntries.length > 0
+        ? `\nUser preferences (group these domains together):\n${affinityEntries.map(([d, g]) => `  ${d} \u2192 "${g}"`).join("\n")}\n`
+        : "";
   }
 
   const extra = [
-    extraHints?.corrections || '',
-    extraHints?.rejections || '',
-    extraHints?.coOccurrence || '',
-    extraHints?.openers || '',
-  ].filter(Boolean).join('');
+    extraHints?.corrections || "",
+    extraHints?.rejections || "",
+    extraHints?.coOccurrence || "",
+    extraHints?.openers || "",
+  ]
+    .filter(Boolean)
+    .join("");
 
   return `Group these browser tabs into at most ${maxGroups} logical groups.
 Return ONLY a JSON array, no other text.
@@ -193,7 +218,7 @@ Return ONLY a JSON array, no other text.
 Rules:
 - Every tab must appear in exactly one group
 - Use short group names (1-3 words)
-- Valid colors: ${COLORS.join(', ')}
+- Valid colors: ${COLORS.join(", ")}
 - Use tabIds from the list below exactly as given
 
 Format: [{"name":"Group","color":"blue","tabIds":[1,2]}]
@@ -208,7 +233,7 @@ export function tokenizeTitle(text: string): string[] {
   return text
     .toLowerCase()
     .split(/[^a-z0-9]+/)
-    .filter(w => w.length >= 3);
+    .filter((w) => w.length >= 3);
 }
 
 export function titleGroupSimilarity(tabTitle: string, groupName: string): number {
@@ -269,15 +294,15 @@ function extractJSON(raw: string): string {
 }
 
 function validateGroup(g: unknown): g is RawGroup {
-  if (typeof g !== 'object' || g === null) return false;
+  if (typeof g !== "object" || g === null) return false;
   const obj = g as Record<string, unknown>;
   if (!Array.isArray(obj.tabIds)) return false;
   return true;
 }
 
 export function parseResponse(raw: string, tabs: TabInfo[]): GroupSuggestion[] {
-  const validIds = new Set(tabs.map(t => t.id));
-  const tabMap = new Map(tabs.map(t => [t.id, t]));
+  const validIds = new Set(tabs.map((t) => t.id));
+  const tabMap = new Map(tabs.map((t) => [t.id, t]));
 
   const json = extractJSON(raw);
 
@@ -288,32 +313,35 @@ export function parseResponse(raw: string, tabs: TabInfo[]): GroupSuggestion[] {
     throw new Error(`Failed to parse LLM response as JSON. Length: ${raw.length}, Error: ${err}`);
   }
 
-  if (!Array.isArray(parsed)) throw new Error('Response is not an array');
+  if (!Array.isArray(parsed)) throw new Error("Response is not an array");
 
   const assignedIds = new Set<number>();
 
   const groups = parsed
     .filter(validateGroup)
-    .map(g => {
-      const name = String(g.name || 'Unnamed').slice(0, 50);
-      const color = (COLORS.includes(g.color as Color) ? g.color : 'grey') as Color;
+    .map((g) => {
+      const name = String(g.name || "Unnamed").slice(0, 50);
+      const color = (COLORS.includes(g.color as Color) ? g.color : "grey") as Color;
       const tabIds = g.tabIds
-        .map((id: unknown) => typeof id === 'number' ? id : Number(id))
+        .map((id: unknown) => (typeof id === "number" ? id : Number(id)))
         .filter((id: number) => !isNaN(id) && validIds.has(id) && !assignedIds.has(id));
       for (const id of tabIds) assignedIds.add(id);
       return { name, color, tabs: tabIds.map((id: number) => tabMap.get(id)!) };
     })
-    .filter(g => g.tabs.length > 0);
+    .filter((g) => g.tabs.length > 0);
 
   return groups;
 }
 
 /** Collect any tabs the LLM forgot into an "Other" group */
-export function collectUnassigned(groups: GroupSuggestion[], allTabs: TabInfo[]): GroupSuggestion[] {
-  const assignedIds = new Set(groups.flatMap(g => g.tabs.map(t => t.id)));
-  const missing = allTabs.filter(t => !assignedIds.has(t.id));
+export function collectUnassigned(
+  groups: GroupSuggestion[],
+  allTabs: TabInfo[],
+): GroupSuggestion[] {
+  const assignedIds = new Set(groups.flatMap((g) => g.tabs.map((t) => t.id)));
+  const missing = allTabs.filter((t) => !assignedIds.has(t.id));
   if (missing.length > 0) {
-    return [...groups, { name: 'Other', color: 'grey' as Color, tabs: missing }];
+    return [...groups, { name: "Other", color: "grey" as Color, tabs: missing }];
   }
   return groups;
 }
@@ -335,7 +363,7 @@ function mergeSuggestions(chunks: GroupSuggestion[][]): GroupSuggestion[] {
     for (const g of suggestions) {
       const key = g.name.toLowerCase();
       // Deduplicate tabs that were assigned across multiple chunks
-      const newTabs = g.tabs.filter(t => !globalAssignedIds.has(t.id));
+      const newTabs = g.tabs.filter((t) => !globalAssignedIds.has(t.id));
       for (const t of newTabs) globalAssignedIds.add(t.id);
       if (byName.has(key)) {
         byName.get(key)!.tabs.push(...newTabs);
@@ -344,7 +372,7 @@ function mergeSuggestions(chunks: GroupSuggestion[][]): GroupSuggestion[] {
       }
     }
   }
-  return Array.from(byName.values()).filter(g => g.tabs.length > 0);
+  return Array.from(byName.values()).filter((g) => g.tabs.length > 0);
 }
 
 export async function suggest(
@@ -352,9 +380,9 @@ export async function suggest(
   settings: Settings,
   affinity: AffinityMap,
   domainRules: DomainRule[] = [],
-  historyHint = '',
+  historyHint = "",
   extraHints?: ExtraHints,
-): Promise<{ suggestions: GroupSuggestion[], inputTokens: number, outputTokens: number }> {
+): Promise<{ suggestions: GroupSuggestion[]; inputTokens: number; outputTokens: number }> {
   const { matched, remaining } = applyDomainRules(tabs, domainRules);
 
   if (remaining.length === 0) return { suggestions: matched, inputTokens: 0, outputTokens: 0 };
@@ -367,10 +395,17 @@ export async function suggest(
   const chunkResults: GroupSuggestion[][] = [];
 
   for (const chunk of chunks) {
-    const prompt = buildPrompt(chunk, remainingGroups, affinity, settings.maxTitleLength, historyHint, extraHints);
+    const prompt = buildPrompt(
+      chunk,
+      remainingGroups,
+      affinity,
+      settings.maxTitleLength,
+      historyHint,
+      extraHints,
+    );
     const result = await completeWithUsage(settings, [
-      { role: 'system', content: 'You are a browser tab organizer. Return only valid JSON.' },
-      { role: 'user', content: prompt },
+      { role: "system", content: "You are a browser tab organizer. Return only valid JSON." },
+      { role: "user", content: prompt },
     ]);
     chunkResults.push(parseResponse(result.content, chunk));
     totalInput += result.inputTokens;

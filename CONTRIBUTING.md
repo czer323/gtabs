@@ -50,13 +50,13 @@ npm run dev           # rebuilds dist/ automatically on source changes
 
 ## Development Scripts
 
-| Command | Description |
-|---------|-------------|
-| `npm test` | Run all tests (Vitest) |
-| `npm run test:watch` | Run tests in watch mode |
-| `npm run build` | Build extension into `dist/` |
-| `npm run dev` | Watch mode — rebuilds on file change |
-| `npm run package` | Create `gtabs-extension.zip` from `dist/` |
+| Command              | Description                               |
+| -------------------- | ----------------------------------------- |
+| `npm test`           | Run all tests (Vitest)                    |
+| `npm run test:watch` | Run tests in watch mode                   |
+| `npm run build`      | Build extension into `dist/`              |
+| `npm run dev`        | Watch mode — rebuilds on file change      |
+| `npm run package`    | Create `gtabs-extension.zip` from `dist/` |
 
 ---
 
@@ -115,13 +115,13 @@ A maintainer reviews within a few days. Expect questions and requests for change
 
 ### Naming
 
-| Convention | Examples |
-|------------|----------|
-| Files: `kebab-case.ts` | `background.ts`, `grouper.ts` |
-| Types/interfaces: PascalCase | `GroupSuggestion`, `WeightedAffinityMap` |
-| Functions: camelCase, verb-first | `applyGroups`, `getSettings`, `buildPrompt` |
-| Constants: UPPER_SNAKE_CASE | `MAX_HISTORY`, `DECAY_HALF_LIFE_MS` |
-| File-level mutable state: camelCase | `openerMap`, `tabActivationTimes` |
+| Convention                          | Examples                                    |
+| ----------------------------------- | ------------------------------------------- |
+| Files: `kebab-case.ts`              | `background.ts`, `grouper.ts`               |
+| Types/interfaces: PascalCase        | `GroupSuggestion`, `WeightedAffinityMap`    |
+| Functions: camelCase, verb-first    | `applyGroups`, `getSettings`, `buildPrompt` |
+| Constants: UPPER_SNAKE_CASE         | `MAX_HISTORY`, `DECAY_HALF_LIFE_MS`         |
+| File-level mutable state: camelCase | `openerMap`, `tabActivationTimes`           |
 
 ### Error Handling
 

@@ -1,60 +1,67 @@
-import type { Color, GroupSuggestion, TabInfo, CorrectionEntry, RejectionEntry } from './types';
-import { COLORS } from './types';
-import { getSuggestions, getSettings, saveSettings } from './storage';
+import type { Color, GroupSuggestion, TabInfo, CorrectionEntry, RejectionEntry } from "./types";
+import { COLORS } from "./types";
+import { getSuggestions, getSettings, saveSettings } from "./storage";
 
 const $ = <T extends HTMLElement>(id: string) => document.getElementById(id) as T;
 
-const btnOrganize = $<HTMLButtonElement>('organize');
-const btnOrganizeUngrouped = $<HTMLButtonElement>('organize-ungrouped');
-const btnApply = $<HTMLButtonElement>('apply-all');
-const btnUndo = $<HTMLButtonElement>('undo');
-const btnSettings = $<HTMLButtonElement>('open-settings');
-const status = $<HTMLDivElement>('status');
-const container = $<HTMLDivElement>('suggestions');
-const searchInput = $<HTMLInputElement>('search');
-const tabSearchResults = $<HTMLDivElement>('tab-search-results');
-const statsText = $<HTMLSpanElement>('stats-text');
-const costText = $<HTMLSpanElement>('cost-text');
+const btnOrganize = $<HTMLButtonElement>("organize");
+const btnOrganizeUngrouped = $<HTMLButtonElement>("organize-ungrouped");
+const btnApply = $<HTMLButtonElement>("apply-all");
+const btnUndo = $<HTMLButtonElement>("undo");
+const btnSettings = $<HTMLButtonElement>("open-settings");
+const status = $<HTMLDivElement>("status");
+const container = $<HTMLDivElement>("suggestions");
+const searchInput = $<HTMLInputElement>("search");
+const tabSearchResults = $<HTMLDivElement>("tab-search-results");
+const statsText = $<HTMLSpanElement>("stats-text");
+const costText = $<HTMLSpanElement>("cost-text");
 
 let currentSuggestions: GroupSuggestion[] = [];
 let originalSuggestions: GroupSuggestion[] = [];
 
 function clearSuggestionUi() {
   currentSuggestions = [];
-  container.innerHTML = '';
-  searchInput.value = '';
-  tabSearchResults.innerHTML = '';
+  container.innerHTML = "";
+  searchInput.value = "";
+  tabSearchResults.innerHTML = "";
   btnApply.hidden = true;
 }
 
 function setStatus(msg: string, isError = false) {
   status.textContent = msg;
-  status.className = isError ? 'error' : '';
+  status.className = isError ? "error" : "";
 }
 
 function esc(s: string): string {
-  return s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+  return s
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;");
 }
 
 function sendMsg(msg: Record<string, unknown>): Promise<Record<string, unknown> | undefined> {
-  return new Promise(resolve => chrome.runtime.sendMessage(msg, resolve));
+  return new Promise((resolve) => chrome.runtime.sendMessage(msg, resolve));
 }
 
 function deepCloneSuggestions(suggestions: GroupSuggestion[]): GroupSuggestion[] {
-  return suggestions.map(g => ({
+  return suggestions.map((g) => ({
     name: g.name,
     color: g.color,
-    tabs: g.tabs.map(t => ({ ...t })),
+    tabs: g.tabs.map((t) => ({ ...t })),
   }));
 }
 
-function computeCorrections(original: GroupSuggestion[], current: GroupSuggestion[]): CorrectionEntry['corrections'] {
+function computeCorrections(
+  original: GroupSuggestion[],
+  current: GroupSuggestion[],
+): CorrectionEntry["corrections"] {
   const originalMap = new Map<number, string>();
   for (const g of original) {
     for (const t of g.tabs) originalMap.set(t.id, g.name);
   }
 
-  const corrections: CorrectionEntry['corrections'] = [];
+  const corrections: CorrectionEntry["corrections"] = [];
   for (const g of current) {
     for (const t of g.tabs) {
       const origGroup = originalMap.get(t.id);
@@ -62,7 +69,9 @@ function computeCorrections(original: GroupSuggestion[], current: GroupSuggestio
         try {
           const domain = new URL(t.url).hostname;
           corrections.push({ domain, originalGroup: origGroup, correctedGroup: g.name });
-        } catch { /* skip */ }
+        } catch {
+          /* skip */
+        }
       }
     }
   }
@@ -73,8 +82,8 @@ function computeCorrections(original: GroupSuggestion[], current: GroupSuggestio
 function renderSuggestions(suggestions: GroupSuggestion[]) {
   currentSuggestions = suggestions;
   originalSuggestions = deepCloneSuggestions(suggestions);
-  container.innerHTML = '';
-  tabSearchResults.innerHTML = '';
+  container.innerHTML = "";
+  tabSearchResults.innerHTML = "";
 
   if (!suggestions.length) {
     btnApply.hidden = true;
@@ -83,37 +92,37 @@ function renderSuggestions(suggestions: GroupSuggestion[]) {
 
   for (let i = 0; i < suggestions.length; i++) {
     const g = suggestions[i];
-    const card = document.createElement('div');
-    card.className = 'card';
+    const card = document.createElement("div");
+    card.className = "card";
     card.innerHTML = `
       <div class="card-header">
         <input class="group-name" value="${esc(g.name)}" data-i="${i}" />
         <select class="group-color" data-i="${i}">
-          ${COLORS.map(c => `<option value="${c}" ${c === g.color ? 'selected' : ''}>${c}</option>`).join('')}
+          ${COLORS.map((c) => `<option value="${c}" ${c === g.color ? "selected" : ""}>${c}</option>`).join("")}
         </select>
         <button class="pin-group" data-i="${i}" title="Pin this group (survives re-org)">&#x1F4CC;</button>
         <button class="remove-group" data-i="${i}">&times;</button>
       </div>
       <ul class="tab-list">
-        ${g.tabs.map(t => `<li title="${esc(t.url)}">${esc(t.title || t.url)}</li>`).join('')}
+        ${g.tabs.map((t) => `<li title="${esc(t.url)}">${esc(t.title || t.url)}</li>`).join("")}
       </ul>`;
     container.appendChild(card);
   }
 
-  container.querySelectorAll<HTMLInputElement>('.group-name').forEach(el =>
-    el.addEventListener('input', () => {
+  container.querySelectorAll<HTMLInputElement>(".group-name").forEach((el) =>
+    el.addEventListener("input", () => {
       currentSuggestions[Number(el.dataset.i)].name = el.value;
     }),
   );
 
-  container.querySelectorAll<HTMLSelectElement>('.group-color').forEach(el =>
-    el.addEventListener('change', () => {
+  container.querySelectorAll<HTMLSelectElement>(".group-color").forEach((el) =>
+    el.addEventListener("change", () => {
       currentSuggestions[Number(el.dataset.i)].color = el.value as Color;
     }),
   );
 
-  container.querySelectorAll<HTMLButtonElement>('.pin-group').forEach(el =>
-    el.addEventListener('click', async () => {
+  container.querySelectorAll<HTMLButtonElement>(".pin-group").forEach((el) =>
+    el.addEventListener("click", async () => {
       const idx = Number(el.dataset.i);
       const groupName = currentSuggestions[idx]?.name;
       if (!groupName) return;
@@ -130,8 +139,8 @@ function renderSuggestions(suggestions: GroupSuggestion[]) {
     }),
   );
 
-  container.querySelectorAll<HTMLButtonElement>('.remove-group').forEach(el =>
-    el.addEventListener('click', async () => {
+  container.querySelectorAll<HTMLButtonElement>(".remove-group").forEach((el) =>
+    el.addEventListener("click", async () => {
       const idx = Number(el.dataset.i);
       const removed = currentSuggestions[idx];
 
@@ -142,10 +151,12 @@ function renderSuggestions(suggestions: GroupSuggestion[]) {
           try {
             const domain = new URL(tab.url).hostname;
             rejections.push({ timestamp: now, domain, rejectedGroup: removed.name });
-          } catch { /* skip */ }
+          } catch {
+            /* skip */
+          }
         }
         if (rejections.length > 0) {
-          sendMsg({ type: 'record-rejections', rejections });
+          sendMsg({ type: "record-rejections", rejections });
         }
       }
 
@@ -159,25 +170,27 @@ function renderSuggestions(suggestions: GroupSuggestion[]) {
 
 // --- Tab search ---
 
-function renderTabSearchResults(results: Array<{ id: number; title: string; url: string; groupName: string; groupId: number }>) {
-  tabSearchResults.innerHTML = '';
+function renderTabSearchResults(
+  results: Array<{ id: number; title: string; url: string; groupName: string; groupId: number }>,
+) {
+  tabSearchResults.innerHTML = "";
   if (!results.length) {
     tabSearchResults.innerHTML = '<div class="tab-search-empty">No tabs found</div>';
     return;
   }
   for (const tab of results.slice(0, 30)) {
-    const row = document.createElement('div');
-    row.className = 'tab-search-row';
+    const row = document.createElement("div");
+    row.className = "tab-search-row";
     row.innerHTML = `
       <div class="tab-search-info">
         <span class="tab-search-title">${esc(tab.title || tab.url)}</span>
-        ${tab.groupName ? `<span class="tab-search-group">${esc(tab.groupName)}</span>` : ''}
+        ${tab.groupName ? `<span class="tab-search-group">${esc(tab.groupName)}</span>` : ""}
       </div>
       <button class="btn-ghost tab-search-switch" data-id="${tab.id}">Switch</button>`;
     tabSearchResults.appendChild(row);
   }
-  tabSearchResults.querySelectorAll<HTMLButtonElement>('.tab-search-switch').forEach(btn => {
-    btn.addEventListener('click', async () => {
+  tabSearchResults.querySelectorAll<HTMLButtonElement>(".tab-search-switch").forEach((btn) => {
+    btn.addEventListener("click", async () => {
       const tabId = Number(btn.dataset.id);
       await chrome.tabs.update(tabId, { active: true });
       const tab = await chrome.tabs.get(tabId);
@@ -189,26 +202,29 @@ function renderTabSearchResults(results: Array<{ id: number; title: string; url:
 
 let searchTabsTimer: ReturnType<typeof setTimeout> | null = null;
 
-searchInput.addEventListener('input', () => {
+searchInput.addEventListener("input", () => {
   const q = searchInput.value.toLowerCase();
 
   if (currentSuggestions.length > 0) {
-    tabSearchResults.innerHTML = '';
-    container.querySelectorAll('.tab-list li').forEach(li => {
-      const match = !q || (li.textContent ?? '').toLowerCase().includes(q) || (li.getAttribute('title') ?? '').toLowerCase().includes(q);
-      (li as HTMLElement).style.display = match ? '' : 'none';
-      li.className = q && match ? 'search-match' : '';
+    tabSearchResults.innerHTML = "";
+    container.querySelectorAll(".tab-list li").forEach((li) => {
+      const match =
+        !q ||
+        (li.textContent ?? "").toLowerCase().includes(q) ||
+        (li.getAttribute("title") ?? "").toLowerCase().includes(q);
+      (li as HTMLElement).style.display = match ? "" : "none";
+      li.className = q && match ? "search-match" : "";
     });
-    container.querySelectorAll<HTMLDivElement>('.card').forEach(card => {
+    container.querySelectorAll<HTMLDivElement>(".card").forEach((card) => {
       const hasVisible = card.querySelector('.tab-list li:not([style*="display: none"])');
-      card.style.opacity = !q || hasVisible ? '1' : '0.4';
+      card.style.opacity = !q || hasVisible ? "1" : "0.4";
     });
   } else {
     if (searchTabsTimer) clearTimeout(searchTabsTimer);
-    tabSearchResults.innerHTML = '';
+    tabSearchResults.innerHTML = "";
     if (!q) return;
     searchTabsTimer = setTimeout(async () => {
-      const res = await sendMsg({ type: 'search-tabs', query: q });
+      const res = await sendMsg({ type: "search-tabs", query: q });
       if (res?.tabResults) renderTabSearchResults(res.tabResults);
     }, 200);
   }
@@ -219,26 +235,33 @@ searchInput.addEventListener('input', () => {
 let focusedCardIdx = -1;
 
 function getCards(): HTMLDivElement[] {
-  return Array.from(container.querySelectorAll<HTMLDivElement>('.card'));
+  return Array.from(container.querySelectorAll<HTMLDivElement>(".card"));
 }
 
 function setFocusedCard(idx: number) {
   const cards = getCards();
-  cards.forEach((c, i) => c.classList.toggle('focused', i === idx));
+  cards.forEach((c, i) => c.classList.toggle("focused", i === idx));
   focusedCardIdx = idx;
   if (idx >= 0 && idx < cards.length) {
-    cards[idx].scrollIntoView({ block: 'nearest' });
+    cards[idx].scrollIntoView({ block: "nearest" });
   }
 }
 
-document.addEventListener('keydown', e => {
-  const inInput = document.activeElement instanceof HTMLInputElement || document.activeElement instanceof HTMLSelectElement;
+document.addEventListener("keydown", (e) => {
+  const inInput =
+    document.activeElement instanceof HTMLInputElement ||
+    document.activeElement instanceof HTMLSelectElement;
 
-  if (e.key === 'Escape') {
-    searchInput.value = '';
-    tabSearchResults.innerHTML = '';
-    container.querySelectorAll<HTMLElement>('.tab-list li').forEach(li => { li.style.display = ''; li.className = ''; });
-    container.querySelectorAll<HTMLDivElement>('.card').forEach(c => { c.style.opacity = '1'; });
+  if (e.key === "Escape") {
+    searchInput.value = "";
+    tabSearchResults.innerHTML = "";
+    container.querySelectorAll<HTMLElement>(".tab-list li").forEach((li) => {
+      li.style.display = "";
+      li.className = "";
+    });
+    container.querySelectorAll<HTMLDivElement>(".card").forEach((c) => {
+      c.style.opacity = "1";
+    });
     setFocusedCard(-1);
     (document.activeElement as HTMLElement)?.blur?.();
     return;
@@ -247,13 +270,13 @@ document.addEventListener('keydown', e => {
   if (inInput) return;
 
   const cards = getCards();
-  if (e.key === 'ArrowDown' && cards.length) {
+  if (e.key === "ArrowDown" && cards.length) {
     e.preventDefault();
     setFocusedCard(Math.min(focusedCardIdx + 1, cards.length - 1));
-  } else if (e.key === 'ArrowUp' && cards.length) {
+  } else if (e.key === "ArrowUp" && cards.length) {
     e.preventDefault();
     setFocusedCard(Math.max(0, focusedCardIdx - 1));
-  } else if (e.key === 'Enter' && currentSuggestions.length > 0 && !btnApply.hidden) {
+  } else if (e.key === "Enter" && currentSuggestions.length > 0 && !btnApply.hidden) {
     e.preventDefault();
     btnApply.click();
   }
@@ -262,56 +285,56 @@ document.addEventListener('keydown', e => {
 // --- Core actions ---
 
 async function doOrganize(ungroupedOnly: boolean) {
-  setStatus('Organizing...');
+  setStatus("Organizing...");
   btnOrganize.disabled = true;
   btnOrganizeUngrouped.disabled = true;
-  container.innerHTML = '';
+  container.innerHTML = "";
   btnApply.hidden = true;
 
-  const res = await sendMsg({ type: ungroupedOnly ? 'organize-ungrouped' : 'organize' });
+  const res = await sendMsg({ type: ungroupedOnly ? "organize-ungrouped" : "organize" });
 
   btnOrganize.disabled = false;
   btnOrganizeUngrouped.disabled = false;
 
   if (!res) {
-    setStatus('No response — try again', true);
+    setStatus("No response — try again", true);
   } else if (res.error) {
     setStatus(res.error, true);
   } else if (res.suggestions) {
     setStatus(`${res.suggestions.length} groups suggested`);
     renderSuggestions(res.suggestions);
   } else {
-    setStatus('No suggestions returned', true);
+    setStatus("No suggestions returned", true);
   }
 }
 
-btnOrganize.addEventListener('click', () => doOrganize(false));
-btnOrganizeUngrouped.addEventListener('click', () => doOrganize(true));
+btnOrganize.addEventListener("click", () => doOrganize(false));
+btnOrganizeUngrouped.addEventListener("click", () => doOrganize(true));
 
-btnApply.addEventListener('click', async () => {
+btnApply.addEventListener("click", async () => {
   if (!currentSuggestions.length) return;
-  setStatus('Applying...');
+  setStatus("Applying...");
   btnApply.disabled = true;
 
   const corrections = computeCorrections(originalSuggestions, currentSuggestions);
   if (corrections.length > 0) {
-    sendMsg({ type: 'record-corrections', corrections: { timestamp: Date.now(), corrections } });
+    sendMsg({ type: "record-corrections", corrections: { timestamp: Date.now(), corrections } });
   }
 
-  await sendMsg({ type: 'apply', suggestions: currentSuggestions });
-  setStatus('Applied!');
+  await sendMsg({ type: "apply", suggestions: currentSuggestions });
+  setStatus("Applied!");
   btnApply.disabled = false;
   clearSuggestionUi();
   await refreshFooter();
 });
 
-btnUndo.addEventListener('click', async () => {
-  setStatus('Undoing...');
-  const res = await sendMsg({ type: 'undo' });
-  setStatus(res?.error ? res.error : 'Undone!', Boolean(res?.error));
+btnUndo.addEventListener("click", async () => {
+  setStatus("Undoing...");
+  const res = await sendMsg({ type: "undo" });
+  setStatus(res?.error ? res.error : "Undone!", Boolean(res?.error));
 });
 
-btnSettings.addEventListener('click', () => {
+btnSettings.addEventListener("click", () => {
   chrome.runtime.openOptionsPage();
 });
 
@@ -319,8 +342,8 @@ btnSettings.addEventListener('click', () => {
 
 async function refreshFooter() {
   const [statsRes, costsRes] = await Promise.all([
-    sendMsg({ type: 'get-stats' }),
-    sendMsg({ type: 'get-costs' }),
+    sendMsg({ type: "get-stats" }),
+    sendMsg({ type: "get-costs" }),
   ]);
 
   if (statsRes?.stats?.totalOrganizations) {

@@ -34,15 +34,15 @@ options.ts ───────────┤
             types.ts   (no dependencies — pure type definitions)
 ```
 
-| Module | Role | Depends On |
-|--------|------|------------|
-| `types.ts` | All interfaces, type unions, and constants | Nothing |
-| `storage.ts` | Chrome storage read/write, data migration, affinity math | `types.ts` |
-| `llm.ts` | Provider-agnostic API client, token counting | `types.ts` |
-| `grouper.ts` | Prompt construction, response parsing, domain rule matching, title matching | `llm.ts`, `types.ts` |
-| `background.ts` | Service worker — message routing, feature orchestration, event listeners | All of the above |
-| `popup.ts` | Action popup UI — organize, pin, correct, reject, search | `storage.ts`, `types.ts` |
-| `options.ts` | Settings page — providers, learning toggles, schedules, pinned groups | `storage.ts`, `types.ts` |
+| Module          | Role                                                                        | Depends On               |
+| --------------- | --------------------------------------------------------------------------- | ------------------------ |
+| `types.ts`      | All interfaces, type unions, and constants                                  | Nothing                  |
+| `storage.ts`    | Chrome storage read/write, data migration, affinity math                    | `types.ts`               |
+| `llm.ts`        | Provider-agnostic API client, token counting                                | `types.ts`               |
+| `grouper.ts`    | Prompt construction, response parsing, domain rule matching, title matching | `llm.ts`, `types.ts`     |
+| `background.ts` | Service worker — message routing, feature orchestration, event listeners    | All of the above         |
+| `popup.ts`      | Action popup UI — organize, pin, correct, reject, search                    | `storage.ts`, `types.ts` |
+| `options.ts`    | Settings page — providers, learning toggles, schedules, pinned groups       | `storage.ts`, `types.ts` |
 
 `background.ts` is the hub. It imports every other module and wires them together through the message handler. `popup.ts` and `options.ts` are the only modules that never import `background.ts` — they communicate exclusively through `chrome.runtime.sendMessage`.
 
@@ -74,11 +74,11 @@ type MessageType =
 
 ### Two Storage Areas
 
-| Area | Contents | Reason |
-|------|----------|--------|
-| `chrome.storage.sync` | Settings, domain rules | Roam across signed-in Chrome devices |
-| `chrome.storage.local` | Weighted affinity, corrections, rejections, history, costs, stats, workspaces, snoozed tabs, undo snapshots | Large or privacy-sensitive data that shouldn't sync |
-| `chrome.storage.local` (explicit key) | API keys | **Never** synced — security requirement |
+| Area                                  | Contents                                                                                                    | Reason                                              |
+| ------------------------------------- | ----------------------------------------------------------------------------------------------------------- | --------------------------------------------------- |
+| `chrome.storage.sync`                 | Settings, domain rules                                                                                      | Roam across signed-in Chrome devices                |
+| `chrome.storage.local`                | Weighted affinity, corrections, rejections, history, costs, stats, workspaces, snoozed tabs, undo snapshots | Large or privacy-sensitive data that shouldn't sync |
+| `chrome.storage.local` (explicit key) | API keys                                                                                                    | **Never** synced — security requirement             |
 
 ### Access Pattern
 
@@ -110,8 +110,8 @@ interface WeightedAffinityEntry {
 }
 
 interface WeightedAffinityGroup {
-  count: number;       // number of times this domain was placed in this group
-  lastUsed: number;    // epoch ms of most recent placement
+  count: number; // number of times this domain was placed in this group
+  lastUsed: number; // epoch ms of most recent placement
 }
 ```
 
@@ -187,7 +187,7 @@ interface CompletionResult {
 export async function completeWithUsage(
   config: LLMConfig,
   messages: Message[],
-): Promise<CompletionResult>
+): Promise<CompletionResult>;
 ```
 
 ### Provider Detection
@@ -220,6 +220,7 @@ The 2-minute alarm (`gtabs-check`) triggers `triggerAutoCheck()` which calls `ch
 ### Context Menu Rebuild
 
 Context menus are rebuilt on:
+
 - Extension install/wake (`onInstalled`)
 - Tab group creation, removal, or update
 - Rebuilds are serialized via a promise chain (`contextMenuRebuildQueue`) to prevent race conditions from overlapping tab group events.
@@ -228,10 +229,10 @@ Context menus are rebuilt on:
 
 The service worker keeps two in-memory maps that are NOT persisted:
 
-| Map | Purpose |
-|-----|---------|
-| `openerMap` | Tracks which tab opened which (for opener-aware routing) |
-| `tabActivationTimes` | Tracks when each tab was last activated |
+| Map                  | Purpose                                                  |
+| -------------------- | -------------------------------------------------------- |
+| `openerMap`          | Tracks which tab opened which (for opener-aware routing) |
+| `tabActivationTimes` | Tracks when each tab was last activated                  |
 
 Both are bounded at `MAX_TRACKED_TAB_RELATIONS` (5000 entries) with oldest-entry eviction.
 

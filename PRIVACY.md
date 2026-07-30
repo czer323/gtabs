@@ -9,6 +9,7 @@ gTabs does not collect, transmit, or store any personal data on external servers
 ## Data Collection
 
 gTabs does **not** collect:
+
 - Personal information (name, email, account details)
 - Browsing history beyond the current window's open tabs
 - Analytics, telemetry, or usage tracking data
@@ -56,15 +57,15 @@ If you use **Ollama** or **Chrome Built-in AI**, all processing happens on your 
 
 gTabs requests the following Chrome permissions:
 
-| Permission | Why it's needed |
-|---|---|
-| `tabs` | Read tab titles and URLs to generate grouping suggestions |
-| `tabGroups` | Create, modify, and remove tab groups |
-| `storage` | Save your settings, learning data, and API keys locally |
-| `alarms` | Run scheduled re-organization and auto-organize checks |
-| `contextMenus` | Add right-click menu options for quick access |
-| `windows` | Support consolidate-windows feature |
-| Host permissions | Send requests to the LLM API endpoint you selected |
+| Permission       | Why it's needed                                           |
+| ---------------- | --------------------------------------------------------- |
+| `tabs`           | Read tab titles and URLs to generate grouping suggestions |
+| `tabGroups`      | Create, modify, and remove tab groups                     |
+| `storage`        | Save your settings, learning data, and API keys locally   |
+| `alarms`         | Run scheduled re-organization and auto-organize checks    |
+| `contextMenus`   | Add right-click menu options for quick access             |
+| `windows`        | Support consolidate-windows feature                       |
+| Host permissions | Send requests to the LLM API endpoint you selected        |
 
 ## Children's Privacy
 
