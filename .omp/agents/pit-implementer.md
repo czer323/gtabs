@@ -69,8 +69,8 @@ flowchart TD
 
 Check all before spawning reviewer:
 
-- [ ] Full test suite passes (`vp test`)
-- [ ] Build, types, lint pass (`vp check`)
+- [ ] Full test suite passes (`npm test`)
+- [ ] Build, types, lint pass (`npm run check`)
 - [ ] Branch pushed to remote
 
 ## Review criteria
