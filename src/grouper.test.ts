@@ -10,15 +10,15 @@ import {
   tokenizeTitle,
   titleGroupSimilarity,
   matchTabsToExistingGroups,
-} from "../src/grouper";
+} from "./grouper";
 import type {
   TabInfo,
   AffinityMap,
   DomainRule,
   WeightedAffinityMap,
   RejectionEntry,
-} from "../src/types";
-import { DEFAULT_SETTINGS, COLORS } from "../src/types";
+} from "./types";
+import { DEFAULT_SETTINGS, COLORS } from "./types";
 
 const TEST_SETTINGS = {
   ...DEFAULT_SETTINGS,
@@ -191,7 +191,7 @@ describe("applyDomainRules", () => {
 
 // ---------- inferTargetGroup ----------
 
-import { inferTargetGroup } from "../src/grouper";
+import { inferTargetGroup } from "./grouper";
 
 describe("inferTargetGroup", () => {
   it("returns null for unparseable URLs", () => {
@@ -200,7 +200,7 @@ describe("inferTargetGroup", () => {
 
   it("matches rules first, then affinity", () => {
     const rules: DomainRule[] = [{ domain: "github.com", groupName: "RulesDev", color: "red" }];
-    const affinity: import("../src/types").AffinityMap = { "github.com": "AffinityDev" };
+    const affinity: import("./types").AffinityMap = { "github.com": "AffinityDev" };
 
     // Rules win
     expect(inferTargetGroup("https://github.com/a", rules, affinity)).toEqual({
@@ -211,7 +211,7 @@ describe("inferTargetGroup", () => {
 
   it("falls back to affinity if no rule matches", () => {
     const rules: DomainRule[] = [];
-    const affinity: import("../src/types").AffinityMap = { "github.com": "AffinityDev" };
+    const affinity: import("./types").AffinityMap = { "github.com": "AffinityDev" };
 
     expect(inferTargetGroup("https://github.com/expr", rules, affinity)).toEqual({
       name: "AffinityDev",

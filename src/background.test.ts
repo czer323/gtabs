@@ -1,8 +1,8 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
-import { resetAllMocks } from "./setup";
-import { getSuggestions, saveSettings, saveSuggestions, saveUndoSnapshot } from "../src/storage";
-import { DEFAULT_SETTINGS } from "../src/types";
-import type { TabInfo, GroupSuggestion } from "../src/types";
+import { resetAllMocks } from "../vitest.setup";
+import { getSuggestions, saveSettings, saveSuggestions, saveUndoSnapshot } from "./storage";
+import { DEFAULT_SETTINGS } from "./types";
+import type { TabInfo, GroupSuggestion } from "./types";
 
 // We test background logic via exported functions
 // Background registers listeners — we'll import the module functions directly
@@ -26,7 +26,7 @@ import {
   restoreSnapshot,
   undoLastGrouping,
   _resetAutoCheckCooldown,
-} from "../src/background";
+} from "./background";
 
 // ---------- Pure utility unit tests ----------
 

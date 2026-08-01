@@ -1,11 +1,11 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { readFileSync } from "fs";
 import { resolve } from "path";
-import { resetAllMocks } from "./setup";
-import { DEFAULT_SETTINGS } from "../src/types";
-import * as storage from "../src/storage";
+import { resetAllMocks } from "../vitest.setup";
+import { DEFAULT_SETTINGS } from "./types";
+import * as storage from "./storage";
 
-const html = readFileSync(resolve(__dirname, "../src/options.html"), "utf-8");
+const html = readFileSync(resolve(__dirname, "./options.html"), "utf-8");
 
 describe("Options Page", () => {
   beforeEach(() => {
@@ -48,7 +48,7 @@ describe("Options Page", () => {
     const saveRulesSpy = vi.spyOn(storage, "saveDomainRules").mockResolvedValue();
 
     // Dynamically import to run the init script
-    await import("../src/options");
+    await import("./options");
     for (let i = 0; i < 15; i++) await new Promise((r) => process.nextTick(r));
 
     // Test Provider Selection

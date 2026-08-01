@@ -11,5 +11,5 @@
     "types": ["chrome"]
   },
   "include": ["src/**/*"],
-  "exclude": ["test/**/*"]
+  "exclude": ["**/*.test.*", "**/*.spec.*"]
 }

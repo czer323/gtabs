@@ -5,8 +5,8 @@ import {
   fetchOllamaModels,
   testConnection,
   isChromeAIAvailable,
-} from "../src/llm";
-import type { LLMConfig } from "../src/types";
+} from "./llm";
+import type { LLMConfig } from "./types";
 
 const cfg: LLMConfig = {
   baseUrl: "https://api.test.com/v1",
@@ -144,7 +144,7 @@ describe("complete - response handling", () => {
         }),
       ),
     );
-    const { completeWithUsage } = await import("../src/llm");
+    const { completeWithUsage } = await import("./llm");
     const result = await completeWithUsage(cfg, [{ role: "user", content: "test" }]);
     expect(result.inputTokens).toBe(15);
     expect(result.outputTokens).toBe(28);
@@ -307,7 +307,7 @@ describe("complete - Anthropic API", () => {
         }),
       ),
     );
-    const { completeWithUsage } = await import("../src/llm");
+    const { completeWithUsage } = await import("./llm");
     const result = await completeWithUsage(anthropicCfg, [{ role: "user", content: "hi" }]);
     expect(result.inputTokens).toBe(42);
     expect(result.outputTokens).toBe(84);

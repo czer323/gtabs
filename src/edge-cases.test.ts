@@ -3,7 +3,7 @@
  * Covers boundary conditions, malformed inputs, and unusual browser states.
  */
 import { describe, it, expect, vi, beforeEach } from "vitest";
-import { resetAllMocks } from "./setup";
+import { resetAllMocks } from "../vitest.setup";
 import {
   isTabUrlAllowed,
   hostnameFromUrl,
@@ -15,7 +15,7 @@ import {
   applyGroups,
   saveCurrentWorkspace,
   restoreWorkspaceByName,
-} from "../src/background";
+} from "./background";
 import {
   extractPathKey,
   computeDecayedWeight,
@@ -24,9 +24,9 @@ import {
   saveWorkspace,
   removeWorkspace,
   getSettings,
-} from "../src/storage";
-import { DEFAULT_SETTINGS } from "../src/types";
-import type { GroupSuggestion, WeightedAffinityEntry, RejectionEntry } from "../src/types";
+} from "./storage";
+import { DEFAULT_SETTINGS } from "./types";
+import type { GroupSuggestion, WeightedAffinityEntry, RejectionEntry } from "./types";
 
 beforeEach(() => {
   resetAllMocks();
@@ -478,7 +478,7 @@ describe("getTabs – edge cases", () => {
 
 describe("organize – edge cases", () => {
   beforeEach(async () => {
-    const { saveSettings } = await import("../src/storage");
+    const { saveSettings } = await import("./storage");
     await saveSettings({
       ...DEFAULT_SETTINGS,
       provider: "openai",
@@ -539,7 +539,7 @@ describe("applyGroups – edge cases", () => {
 
   it("uses color preferences over suggestion color", async () => {
     // Pre-save a color preference
-    const { saveGroupColorPref } = await import("../src/storage");
+    const { saveGroupColorPref } = await import("./storage");
     await saveGroupColorPref("Dev", "purple");
 
     let groupIdCtr = 300;
@@ -556,7 +556,7 @@ describe("applyGroups – edge cases", () => {
   });
 
   it("skips pinned group suggestions", async () => {
-    const { saveSettings } = await import("../src/storage");
+    const { saveSettings } = await import("./storage");
     await saveSettings({ ...DEFAULT_SETTINGS, pinnedGroups: ["Pinned"] });
 
     const suggestions: GroupSuggestion[] = [

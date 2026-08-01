@@ -1,10 +1,10 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { readFileSync } from "fs";
 import { resolve } from "path";
-import { resetAllMocks } from "./setup";
-import * as storage from "../src/storage";
+import { resetAllMocks } from "../vitest.setup";
+import * as storage from "./storage";
 
-const html = readFileSync(resolve(__dirname, "../src/popup.html"), "utf-8");
+const html = readFileSync(resolve(__dirname, "./popup.html"), "utf-8");
 
 describe("Popup Page", () => {
   beforeEach(() => {
@@ -24,7 +24,7 @@ describe("Popup Page", () => {
   });
 
   it("initializes and binds core buttons", async () => {
-    await import("../src/popup");
+    await import("./popup");
     for (let i = 0; i < 15; i++) await new Promise((r) => process.nextTick(r));
 
     // Verify initial load processed pending suggestions
