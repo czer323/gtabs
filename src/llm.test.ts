@@ -144,7 +144,6 @@ describe("complete - response handling", () => {
         }),
       ),
     );
-    const { completeWithUsage } = await import("./llm");
     const result = await completeWithUsage(cfg, [{ role: "user", content: "test" }]);
     expect(result.inputTokens).toBe(15);
     expect(result.outputTokens).toBe(28);
@@ -153,7 +152,7 @@ describe("complete - response handling", () => {
 
 describe("complete - error handling", () => {
   it("throws on network error", async () => {
-    (globalThis as any).fetch = vi.fn(async () => {
+    (globalThis as any).fetch = vi.fn<typeof fetch>(async () => {
       throw new Error("Network error");
     });
     let caught: Error | null = null;
@@ -193,17 +192,23 @@ describe("complete - error handling", () => {
 
   it("throws on non-JSON response body", async () => {
     vi.mocked(fetch).mockResolvedValue(new Response("not json at all"));
-    await expect(complete(cfg, [{ role: "user", content: "hi" }])).rejects.toThrow();
+    await expect(complete(cfg, [{ role: "user", content: "hi" }])).rejects.toThrow(
+      "not valid JSON",
+    );
   });
 
   it("throws on empty choices array", async () => {
     vi.mocked(fetch).mockResolvedValue(new Response(JSON.stringify({ choices: [] })));
-    await expect(complete(cfg, [{ role: "user", content: "hi" }])).rejects.toThrow();
+    await expect(complete(cfg, [{ role: "user", content: "hi" }])).rejects.toThrow(
+      "Empty response from LLM",
+    );
   });
 
   it("throws on missing choices field", async () => {
     vi.mocked(fetch).mockResolvedValue(new Response(JSON.stringify({ result: "ok" })));
-    await expect(complete(cfg, [{ role: "user", content: "hi" }])).rejects.toThrow();
+    await expect(complete(cfg, [{ role: "user", content: "hi" }])).rejects.toThrow(
+      "Empty response from LLM",
+    );
   });
 
   it("throws on null content in response", async () => {
@@ -307,7 +312,6 @@ describe("complete - Anthropic API", () => {
         }),
       ),
     );
-    const { completeWithUsage } = await import("./llm");
     const result = await completeWithUsage(anthropicCfg, [{ role: "user", content: "hi" }]);
     expect(result.inputTokens).toBe(42);
     expect(result.outputTokens).toBe(84);
@@ -332,7 +336,7 @@ describe("complete - Anthropic API", () => {
   });
 
   it("throws on Anthropic network failure", async () => {
-    (globalThis as any).fetch = vi.fn(async () => {
+    (globalThis as any).fetch = vi.fn<typeof fetch>(async () => {
       throw new Error("Failed to fetch");
     });
     await expect(complete(anthropicCfg, [{ role: "user", content: "hi" }])).rejects.toThrow(
@@ -342,12 +346,16 @@ describe("complete - Anthropic API", () => {
 
   it("throws on Anthropic malformed response (missing content field)", async () => {
     vi.mocked(fetch).mockResolvedValue(new Response(JSON.stringify({ id: "msg_123" })));
-    await expect(complete(anthropicCfg, [{ role: "user", content: "hi" }])).rejects.toThrow();
+    await expect(complete(anthropicCfg, [{ role: "user", content: "hi" }])).rejects.toThrow(
+      "Empty response from Anthropic",
+    );
   });
 
   it("throws on Anthropic malformed response (empty content array)", async () => {
     vi.mocked(fetch).mockResolvedValue(new Response(JSON.stringify({ content: [] })));
-    await expect(complete(anthropicCfg, [{ role: "user", content: "hi" }])).rejects.toThrow();
+    await expect(complete(anthropicCfg, [{ role: "user", content: "hi" }])).rejects.toThrow(
+      "Empty response from Anthropic",
+    );
   });
 });
 
@@ -376,7 +384,7 @@ describe("fetchOllamaModels", () => {
   });
 
   it("throws on network error", async () => {
-    (globalThis as any).fetch = vi.fn(async () => {
+    (globalThis as any).fetch = vi.fn<typeof fetch>(async () => {
       throw new Error("connection refused");
     });
     await expect(fetchOllamaModels("http://localhost:11434")).rejects.toThrow("connection refused");
@@ -393,7 +401,7 @@ describe("testConnection", () => {
 
 describe("Chrome AI", () => {
   it("identifies if Chrome AI is available", () => {
-    expect(isChromeAIAvailable()).toBe(false);
+    expect(isChromeAIAvailable()).toBeFalsy();
     (globalThis as any).LanguageModel = {};
     expect(isChromeAIAvailable()).toBe(true);
     delete (globalThis as any).LanguageModel;
@@ -408,10 +416,12 @@ describe("Chrome AI", () => {
 
   it("calls LanguageModel.create successfully", async () => {
     const mockSession = {
-      prompt: vi.fn().mockResolvedValue("chrome ai response"),
-      destroy: vi.fn(),
+      prompt: vi.fn<(prompt: string) => Promise<string>>().mockResolvedValue("chrome ai response"),
+      destroy: vi.fn<() => void>(),
     };
-    const mockCreate = vi.fn().mockResolvedValue(mockSession);
+    const mockCreate = vi
+      .fn<(options: { systemPrompt?: string }) => Promise<typeof mockSession>>()
+      .mockResolvedValue(mockSession);
     (globalThis as any).LanguageModel = { create: mockCreate };
 
     const config: LLMConfig = { model: "gemini-nano", baseUrl: "", apiKey: "" };
@@ -429,8 +439,13 @@ describe("Chrome AI", () => {
   });
 
   it("calls LanguageModel.create without system prompt", async () => {
-    const mockSession = { prompt: vi.fn().mockResolvedValue("xyz"), destroy: vi.fn() };
-    const mockCreate = vi.fn().mockResolvedValue(mockSession);
+    const mockSession = {
+      prompt: vi.fn<(prompt: string) => Promise<string>>().mockResolvedValue("xyz"),
+      destroy: vi.fn<() => void>(),
+    };
+    const mockCreate = vi
+      .fn<(options: { systemPrompt?: string }) => Promise<typeof mockSession>>()
+      .mockResolvedValue(mockSession);
     (globalThis as any).LanguageModel = { create: mockCreate };
 
     const config: LLMConfig = { model: "gemini-nano", baseUrl: "", apiKey: "" };

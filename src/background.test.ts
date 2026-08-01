@@ -2,7 +2,7 @@ import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import { resetAllMocks } from "../vitest.setup";
 import { getSuggestions, saveSettings, saveSuggestions, saveUndoSnapshot } from "./storage";
 import { DEFAULT_SETTINGS } from "./types";
-import type { TabInfo, GroupSuggestion } from "./types";
+import type { GroupSuggestion } from "./types";
 
 // We test background logic via exported functions
 // Background registers listeners — we'll import the module functions directly
@@ -33,14 +33,14 @@ import {
 describe("isTabUrlAllowed", () => {
   it("allows https URLs", () => expect(isTabUrlAllowed("https://example.com")).toBe(true));
   it("allows http URLs", () => expect(isTabUrlAllowed("http://example.com")).toBe(true));
-  it("blocks chrome:// URLs", () => expect(isTabUrlAllowed("chrome://extensions")).toBe(false));
+  it("blocks chrome:// URLs", () => expect(isTabUrlAllowed("chrome://extensions")).toBeFalsy());
   it("blocks chrome-extension:// URLs", () =>
-    expect(isTabUrlAllowed("chrome-extension://abc/popup.html")).toBe(false));
-  it("blocks about:blank", () => expect(isTabUrlAllowed("about:blank")).toBe(false));
-  it("blocks edge:// URLs", () => expect(isTabUrlAllowed("edge://newtab")).toBe(false));
-  it("blocks null", () => expect(isTabUrlAllowed(null)).toBe(false));
-  it("blocks undefined", () => expect(isTabUrlAllowed(undefined)).toBe(false));
-  it("blocks empty string", () => expect(isTabUrlAllowed("")).toBe(false));
+    expect(isTabUrlAllowed("chrome-extension://abc/popup.html")).toBeFalsy());
+  it("blocks about:blank", () => expect(isTabUrlAllowed("about:blank")).toBeFalsy());
+  it("blocks edge:// URLs", () => expect(isTabUrlAllowed("edge://newtab")).toBeFalsy());
+  it("blocks null", () => expect(isTabUrlAllowed(null)).toBeFalsy());
+  it("blocks undefined", () => expect(isTabUrlAllowed(undefined)).toBeFalsy());
+  it("blocks empty string", () => expect(isTabUrlAllowed("")).toBeFalsy());
 });
 
 describe("hostnameFromUrl", () => {
@@ -66,19 +66,19 @@ describe("isImportantAppUrl", () => {
   it("identifies Jira via atlassian.net subdomain", () =>
     expect(isImportantAppUrl("https://company.atlassian.net/jira")).toBe(true));
   it("does not identify random news sites", () =>
-    expect(isImportantAppUrl("https://news.ycombinator.com")).toBe(false));
+    expect(isImportantAppUrl("https://news.ycombinator.com")).toBeFalsy());
   it("does not identify random URLs", () =>
-    expect(isImportantAppUrl("https://example.com")).toBe(false));
+    expect(isImportantAppUrl("https://example.com")).toBeFalsy());
 });
 
 describe("isGroupedTab", () => {
   it("returns true when groupId is a positive number", () =>
     expect(isGroupedTab({ groupId: 100 })).toBe(true));
   it("returns true when groupId is 0", () => expect(isGroupedTab({ groupId: 0 })).toBe(true));
-  it("returns false when groupId is -1", () => expect(isGroupedTab({ groupId: -1 })).toBe(false));
+  it("returns false when groupId is -1", () => expect(isGroupedTab({ groupId: -1 })).toBeFalsy());
   it("returns false when groupId is undefined", () =>
-    expect(isGroupedTab({ groupId: undefined })).toBe(false));
-  it("returns false when groupId is missing", () => expect(isGroupedTab({})).toBe(false));
+    expect(isGroupedTab({ groupId: undefined })).toBeFalsy());
+  it("returns false when groupId is missing", () => expect(isGroupedTab({})).toBeFalsy());
 });
 
 describe("calculateCost", () => {
@@ -862,22 +862,17 @@ describe("event listeners", () => {
       ];
 
       for (const msg of messages) {
-        let responded = false;
-        const sendResponse = vi.fn().mockImplementation(() => {
-          responded = true;
-        });
+        const sendResponse = vi.fn<(response?: unknown) => void>();
         const isAsync = await (chrome.runtime.onMessage as any).callListeners(
           msg,
           {},
           sendResponse,
         );
-        // We either expect `responded` to be true synchronously or after ticks
+        // We either expect a synchronous response or one after microtask ticks
         for (let i = 0; i < 15; i++) await new Promise((r) => process.nextTick(r));
-        if (msg.type === "check-chrome-ai") {
-          expect(isAsync).toEqual([false]); // onMessage returns false for sync
-        } else {
-          expect(isAsync).toEqual([true]); // onMessage returns true to keep channel open
-        }
+        // onMessage returns false for sync handlers, true to keep channel open
+        const expectedAsync = msg.type === "check-chrome-ai" ? [false] : [true];
+        expect(isAsync).toEqual(expectedAsync);
         expect(sendResponse).toHaveBeenCalled();
       }
     });

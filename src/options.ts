@@ -2,7 +2,8 @@ import type { Settings, DomainRule, Color, ProviderPreset } from "./types";
 import { DEFAULT_SETTINGS, PROVIDERS, COLORS } from "./types";
 import { getSettings, saveSettings, getDomainRules, saveDomainRules } from "./storage";
 
-const $ = <T extends HTMLElement>(id: string) => document.getElementById(id) as T;
+// oxlint-disable-next-line typescript/no-unnecessary-type-parameters -- T enables typed call sites like $<HTMLButtonElement>("organize") (58 usages)
+const $ = <T extends HTMLElement>(id: string): T => document.getElementById(id) as T;
 
 // --- Tab switching ---
 document.querySelectorAll<HTMLButtonElement>(".tab-btn").forEach((btn) => {
@@ -157,10 +158,10 @@ function selectProvider(p: ProviderPreset) {
 
   // Ollama: fetch models dynamically
   if (p.canFetchModels) {
-    fetchOllamaModels();
+    void fetchOllamaModels();
   }
 
-  save();
+  void save();
 }
 
 function populateModels(models: string[]) {
@@ -180,7 +181,6 @@ function populateModels(models: string[]) {
 // No longer auto-populating select, using range slider now.
 
 async function fetchOllamaModels() {
-  const origText = modelSelect.innerHTML;
   modelSelect.innerHTML = "<option>Loading models...</option>";
   try {
     const res = await sendMsg({ type: "fetch-ollama-models" });
@@ -232,7 +232,7 @@ async function save() {
     smartUngroup: inSmartUngroup.checked,
     spendingCapUSD: current.spendingCapUSD ?? DEFAULT_SETTINGS.spendingCapUSD,
   };
-  settings.spendingCapUSD = Number(inSpendingCapUSD.value) ?? 0;
+  settings.spendingCapUSD = Number(inSpendingCapUSD.value) || 0;
   await saveSettings(settings);
 }
 
@@ -364,7 +364,7 @@ async function renderDomainRules() {
   // Bind handlers
   const saveRules = async () => {
     const updated: DomainRule[] = [];
-    rulesContainer.querySelectorAll(".rule-row").forEach((row, i) => {
+    rulesContainer.querySelectorAll(".rule-row").forEach((row, _i) => {
       const domain = (row.querySelector(".rule-domain") as HTMLInputElement).value
         .trim()
         .toLowerCase();
@@ -380,10 +380,10 @@ async function renderDomainRules() {
     .forEach((el) => el.addEventListener("change", saveRules));
   rulesContainer.querySelectorAll(".rule-delete").forEach((el) =>
     el.addEventListener("click", async () => {
-      const rules = await getDomainRules();
-      rules.splice(Number((el as HTMLElement).dataset.i), 1);
-      await saveDomainRules(rules);
-      renderDomainRules();
+      const currentRules = await getDomainRules();
+      currentRules.splice(Number((el as HTMLElement).dataset.i), 1);
+      await saveDomainRules(currentRules);
+      await renderDomainRules();
     }),
   );
 }
@@ -392,7 +392,7 @@ btnAddRule.addEventListener("click", async () => {
   const rules = await getDomainRules();
   rules.push({ domain: "", groupName: "", color: "grey" });
   await saveDomainRules(rules);
-  renderDomainRules();
+  await renderDomainRules();
 });
 
 btnExportRulesCSV.addEventListener("click", async () => {
@@ -634,14 +634,16 @@ $<HTMLButtonElement>("tool-focus").addEventListener("click", async () => {
 $<HTMLButtonElement>("tool-sort").addEventListener("click", async () => {
   setToolStatus("Sorting tab groups...");
   const res = await sendMsg({ type: "sort-groups" });
-  setToolStatus(res?.error ? res.error : `Sorted ${res?.count ?? 0} groups`, Boolean(res?.error));
+  const count = Number(res?.count ?? 0);
+  setToolStatus(res?.error ? res.error : `Sorted ${count} groups`, Boolean(res?.error));
 });
 
 $<HTMLButtonElement>("tool-clear").addEventListener("click", async () => {
   setToolStatus("Clearing all tab groups...");
   const res = await sendMsg({ type: "delete-all-groups" });
+  const count = Number(res?.count ?? 0);
   setToolStatus(
-    res?.error ? res.error : res?.count ? `Cleared ${res.count} groups` : "No groups to clear",
+    res?.error ? res.error : count ? `Cleared ${count} groups` : "No groups to clear",
     Boolean(res?.error),
   );
 });
@@ -708,10 +710,10 @@ async function refreshToolWorkspaces() {
   toolWsList.querySelectorAll<HTMLButtonElement>(".ws-tool-restore").forEach((btn) => {
     btn.addEventListener("click", async () => {
       setToolStatus(`Restoring "${btn.dataset.name}"...`);
-      const res = await sendMsg({ type: "restore-workspace", name: btn.dataset.name });
+      const restoreRes = await sendMsg({ type: "restore-workspace", name: btn.dataset.name });
       setToolStatus(
-        res?.error ? res.error : `Restored "${btn.dataset.name}" in new window`,
-        Boolean(res?.error),
+        restoreRes?.error ? restoreRes.error : `Restored "${btn.dataset.name}" in new window`,
+        Boolean(restoreRes?.error),
       );
     });
   });
@@ -780,5 +782,5 @@ document.getElementById("chrome-ai-skip-btn")?.addEventListener("click", () => {
 });
 
 // --- Init ---
-load();
-refreshToolWorkspaces();
+void load();
+void refreshToolWorkspaces();

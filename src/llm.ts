@@ -1,4 +1,4 @@
-import type { LLMConfig, MODEL_PRICING } from "./types";
+import type { LLMConfig } from "./types";
 
 export interface Message {
   role: "system" | "user" | "assistant";
@@ -34,7 +34,7 @@ async function fetchWithTimeout(
     return res;
   } catch (err) {
     if (err instanceof DOMException && err.name === "AbortError") {
-      throw new Error(`LLM request timed out after ${timeoutMs / 1000}s`);
+      throw new Error(`LLM request timed out after ${timeoutMs / 1000}s`, { cause: err });
     }
     throw err;
   } finally {

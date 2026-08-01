@@ -1,8 +1,9 @@
-import type { Color, GroupSuggestion, TabInfo, CorrectionEntry, RejectionEntry } from "./types";
+import type { Color, GroupSuggestion, CorrectionEntry, RejectionEntry } from "./types";
 import { COLORS } from "./types";
 import { getSuggestions, getSettings, saveSettings } from "./storage";
 
-const $ = <T extends HTMLElement>(id: string) => document.getElementById(id) as T;
+// oxlint-disable-next-line typescript/no-unnecessary-type-parameters -- T enables typed call sites like $<HTMLButtonElement>("organize") (11 usages)
+const $ = <T extends HTMLElement>(id: string): T => document.getElementById(id) as T;
 
 const btnOrganize = $<HTMLButtonElement>("organize");
 const btnOrganizeUngrouped = $<HTMLButtonElement>("organize-ungrouped");
@@ -156,7 +157,7 @@ function renderSuggestions(suggestions: GroupSuggestion[]) {
           }
         }
         if (rejections.length > 0) {
-          sendMsg({ type: "record-rejections", rejections });
+          void sendMsg({ type: "record-rejections", rejections });
         }
       }
 
@@ -318,7 +319,10 @@ btnApply.addEventListener("click", async () => {
 
   const corrections = computeCorrections(originalSuggestions, currentSuggestions);
   if (corrections.length > 0) {
-    sendMsg({ type: "record-corrections", corrections: { timestamp: Date.now(), corrections } });
+    void sendMsg({
+      type: "record-corrections",
+      corrections: { timestamp: Date.now(), corrections },
+    });
   }
 
   await sendMsg({ type: "apply", suggestions: currentSuggestions });
@@ -335,7 +339,7 @@ btnUndo.addEventListener("click", async () => {
 });
 
 btnSettings.addEventListener("click", () => {
-  chrome.runtime.openOptionsPage();
+  void chrome.runtime.openOptionsPage();
 });
 
 // --- Footer ---
@@ -357,7 +361,7 @@ async function refreshFooter() {
 
 // --- Init ---
 
-(async () => {
+void (async () => {
   const pending = await getSuggestions();
   if (pending?.length) {
     setStatus(`${pending.length} pending suggestions`);
