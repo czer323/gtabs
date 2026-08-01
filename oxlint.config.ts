@@ -24,6 +24,26 @@ export default defineConfig({
         "vitest/prefer-to-be-falsy": "warn",
       },
     },
+    {
+      // Extension code runs in Chrome's MV3 runtime (service worker / pages) —
+      // no Node globals exist there. Tripwire: usage fails lint so agents and
+      // humans get steered away before esbuild catches it at bundle time.
+      files: ["src/**/*.ts"],
+      excludeFiles: ["src/**/*.test.ts"],
+      rules: {
+        "eslint/no-restricted-globals": [
+          "error",
+          { name: "process" },
+          { name: "Buffer" },
+          { name: "require" },
+          { name: "module" },
+          { name: "exports" },
+          { name: "__dirname" },
+          { name: "__filename" },
+          { name: "global" },
+        ],
+      },
+    },
   ],
   options: {
     typeAware: true,
