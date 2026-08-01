@@ -1,4 +1,4 @@
-import type { Settings, DomainRule, Color, ProviderPreset } from "./types";
+import type { Settings, DomainRule, Color, ProviderPreset, MessageResponse, WorkspaceMap } from "./types";
 import { DEFAULT_SETTINGS, PROVIDERS, COLORS } from "./types";
 import { getSettings, saveSettings, getDomainRules, saveDomainRules } from "./storage";
 
@@ -85,7 +85,7 @@ function esc(s: string): string {
     .replace(/"/g, "&quot;");
 }
 
-function sendMsg(msg: Record<string, unknown>): Promise<Record<string, unknown> | undefined> {
+function sendMsg<T = MessageResponse>(msg: Record<string, unknown>): Promise<T | undefined> {
   return new Promise((resolve) => chrome.runtime.sendMessage(msg, resolve));
 }
 
@@ -656,7 +656,7 @@ $<HTMLButtonElement>("tool-export-md").addEventListener("click", async () => {
     return;
   }
   try {
-    await navigator.clipboard.writeText(res.markdown || "");
+    await navigator.clipboard.writeText(res?.markdown || "");
     setToolStatus("Markdown copied to clipboard!");
   } catch {
     setToolStatus("Clipboard access denied", true);
