@@ -294,7 +294,8 @@ export async function snapshotCurrentState(): Promise<UndoSnapshot> {
 
   for (const t of tabs) {
     if (t.id === undefined) continue;
-    if (isGroupedTab(t)) groups.push({ tabId: t.id, groupId: t.groupId });
+    if (t.groupId !== undefined && t.groupId !== -1)
+      groups.push({ tabId: t.id, groupId: t.groupId });
     else ungrouped.push(t.id);
   }
 
@@ -490,7 +491,7 @@ export async function organize(
       const colorPrefs = await getGroupColorPrefs();
       preMatched = Array.from(matched.entries()).map(([name, matchedTabs]) => ({
         name,
-        color: (colorPrefs[name] ?? "grey") as const,
+        color: (colorPrefs[name] ?? "grey") as Color,
         tabs: matchedTabs,
       }));
       tabsForLLM = remaining;
@@ -734,7 +735,10 @@ export async function exportGroupsAsMarkdown(): Promise<string> {
     lines.push("");
   }
 
-  const ungroupedTabs = tabs.filter((t) => !isGroupedTab(t) && isTabUrlAllowed(t.url));
+  const ungroupedTabs = tabs.filter(
+    (t): t is chrome.tabs.Tab & { url: string } =>
+      (t.groupId === undefined || t.groupId === -1) && isTabUrlAllowed(t.url),
+  );
   if (ungroupedTabs.length) {
     lines.push("## Ungrouped");
     for (const tab of ungroupedTabs) {
@@ -791,7 +795,7 @@ export async function autoPinImportantApps(windowId?: number): Promise<number> {
   const tabs = await chrome.tabs.query(windowId ? { windowId } : { currentWindow: true });
   const importantTabs = tabs
     .filter(
-      (tab) =>
+      (tab): tab is chrome.tabs.Tab & { id: number; url: string } =>
         tab.id !== undefined &&
         isTabUrlAllowed(tab.url) &&
         isImportantAppUrl(tab.url) &&
@@ -1364,25 +1368,25 @@ chrome.runtime.onInstalled.addListener(() => {
   return rebuildContextMenus();
 });
 
-chrome.contextMenus?.onClicked?.addListener((info) => {
+chrome.contextMenus?.onClicked?.addListener((info, tab) => {
   if (info.menuItemId === "gtabs-organize") void organize().catch(() => {});
   if (info.menuItemId === "gtabs-organize-ungrouped") void organize(true).catch(() => {});
   if (info.menuItemId === "gtabs-undo") void undoLastGrouping().catch(() => {});
   if (info.menuItemId === "gtabs-duplicates") void findDuplicateTabs().catch(() => {});
 
   const menuId = String(info.menuItemId);
-  if (menuId === `${CTX_ADD_TO_GROUP_ID}-new` && info.tab?.id !== undefined) {
-    const tabId = info.tab.id;
+  if (menuId === `${CTX_ADD_TO_GROUP_ID}-new` && tab?.id !== undefined) {
+    const tabId = tab.id;
     void (async () => {
       const newGroupId = await groupTabsSafe([tabId]);
       if (newGroupId === null) return;
       await chrome.tabGroups.update(newGroupId, { title: "New Group", collapsed: false });
       await rebuildContextMenus();
     })();
-  } else if (menuId.startsWith(`${CTX_ADD_TO_GROUP_ID}-`) && info.tab?.id !== undefined) {
+  } else if (menuId.startsWith(`${CTX_ADD_TO_GROUP_ID}-`) && tab?.id !== undefined) {
     const groupId = Number(menuId.slice(CTX_ADD_TO_GROUP_ID.length + 1));
     if (Number.isInteger(groupId) && groupId > 0 && groupId < MAX_CONTEXT_GROUP_ID) {
-      void groupTabsSafe([info.tab.id], groupId);
+      void groupTabsSafe([tab.id], groupId);
     }
   }
 });
@@ -1495,7 +1499,7 @@ chrome.tabs.onUpdated?.addListener(async (tabId, changeInfo, tab) => {
 
   triggerAutoCheck();
 
-  if (isGroupedTab(tab)) {
+  if (tab.groupId !== undefined && tab.groupId !== -1) {
     const settings = await getSettings();
     if (settings.smartUngroup) {
       try {

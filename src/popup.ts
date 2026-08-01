@@ -1,4 +1,10 @@
-import type { Color, GroupSuggestion, CorrectionEntry, RejectionEntry } from "./types";
+import type {
+  Color,
+  GroupSuggestion,
+  CorrectionEntry,
+  RejectionEntry,
+  MessageResponse,
+} from "./types";
 import { COLORS } from "./types";
 import { getSuggestions, getSettings, saveSettings } from "./storage";
 
@@ -41,7 +47,7 @@ function esc(s: string): string {
     .replace(/"/g, "&quot;");
 }
 
-function sendMsg(msg: Record<string, unknown>): Promise<Record<string, unknown> | undefined> {
+function sendMsg<T = MessageResponse>(msg: Record<string, unknown>): Promise<T | undefined> {
   return new Promise((resolve) => chrome.runtime.sendMessage(msg, resolve));
 }
 
@@ -354,8 +360,9 @@ async function refreshFooter() {
     statsText.textContent = `${statsRes.stats.totalOrganizations} organizes · ${statsRes.stats.totalTabsGrouped} tabs`;
   }
 
-  if (costsRes?.costs?.totalCost > 0) {
-    costText.textContent = `~$${costsRes.costs.totalCost.toFixed(4)} total`;
+  const totalCost = costsRes?.costs?.totalCost;
+  if (totalCost !== undefined && totalCost > 0) {
+    costText.textContent = `~$${totalCost.toFixed(4)} total`;
   }
 }
 
