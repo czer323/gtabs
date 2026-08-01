@@ -6,10 +6,9 @@
     "strict": true,
     "esModuleInterop": true,
     "skipLibCheck": true,
-    "outDir": "dist",
-    "rootDir": "src",
-    "types": ["chrome"]
+    "noEmit": true,
+    "types": ["node", "chrome"]
   },
-  "include": ["src/**/*"],
+  "include": ["src/**/*", "scripts/**/*", "vitest.config.ts", "vitest.setup.ts"],
   "exclude": ["**/*.test.*", "**/*.spec.*"]
 }

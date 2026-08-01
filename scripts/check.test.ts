@@ -3,12 +3,10 @@ import { spawnSync } from "node:child_process";
 import { chmodSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { runChecks } from "./check.mjs";
-
-type CheckResult = { ok: boolean; failedStep?: string };
+import { runChecks, type CheckResult } from "./check.ts";
 
 const STEPS = ["npm run test", "npm run format:check", "npm run lint", "npm run typecheck"];
-const SCRIPT_PATH = join(import.meta.dirname, "check.mjs");
+const SCRIPT_PATH = join(import.meta.dirname, "check.ts");
 
 function harness(exec: (cmd: string) => void) {
   return {

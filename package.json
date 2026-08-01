@@ -4,20 +4,21 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "build": "node build.mjs",
+    "build": "node scripts/build.ts",
     "package": "rm -f gtabs-extension.zip && cd dist && (xattr -cr . 2>/dev/null || true) && zip -rX ../gtabs-extension.zip . -x '*.map' && cd .. && echo 'Packaged → gtabs-extension.zip'",
     "test": "vitest run --reporter=dot",
     "test:watch": "vitest",
-    "dev": "node build.mjs --watch",
+    "dev": "node scripts/build.ts --watch",
     "lint": "oxlint --format agent",
     "format": "oxfmt",
     "format:check": "oxfmt --check",
     "typecheck": "tsc --noEmit",
-    "check": "node scripts/check.mjs",
+    "check": "node scripts/check.ts",
     "fix": "npm run format && npm run lint -- --fix && npm run check"
   },
   "devDependencies": {
     "@types/chrome": "^0.2.5",
+    "@types/node": "^26.1.2",
     "@vitest/coverage-v8": "^4.1.10",
     "esbuild": "^0.28.1",
     "jsdom": "^30.0.1",
@@ -26,5 +27,8 @@
     "oxlint-tsgolint": "^7.0.2001",
     "typescript": "^7.0.2",
     "vitest": "^4.1.10"
+  },
+  "allowScripts": {
+    "esbuild@0.28.1": true
   }
 }
