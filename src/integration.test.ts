@@ -3,7 +3,7 @@
  * Tests the full pipeline through message dispatch without DOM dependency.
  */
 import { describe, it, expect, vi, beforeEach } from "vitest";
-import { resetAllMocks, resetStores } from "../vitest.setup";
+import { resetAllMocks } from "../vitest.setup";
 import { DEFAULT_SETTINGS } from "./types";
 
 // Helper: flush microtasks
@@ -383,7 +383,7 @@ describe("E2E Integration: Message dispatch → Background → Storage", () => {
 
     const res = await sendMsg({ type: "check-group-drift" });
     // All same domain → 100% coherence → not drifted
-    expect(res.drifted).toBe(false);
+    expect(res.drifted).toBeFalsy();
   });
 
   it("check-group-drift detects drifted group", async () => {
@@ -465,7 +465,6 @@ describe("E2E Integration: Message dispatch → Background → Storage", () => {
   });
 
   it("import-data overwrites settings with validation", async () => {
-    const { DEFAULT_SETTINGS } = await import("./types");
     const importData = {
       settings: { ...DEFAULT_SETTINGS, maxGroups: 99 },
       affinity: {},

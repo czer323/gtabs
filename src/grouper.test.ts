@@ -191,8 +191,6 @@ describe("applyDomainRules", () => {
 
 // ---------- inferTargetGroup ----------
 
-import { inferTargetGroup } from "./grouper";
-
 describe("inferTargetGroup", () => {
   it("returns null for unparseable URLs", () => {
     expect(inferTargetGroup("not-a-url", [], {})).toBeNull();
@@ -297,11 +295,11 @@ describe("findDuplicates", () => {
   });
 
   it("treats different query params as different", () => {
-    const tabs: TabInfo[] = [
+    const queryTabs: TabInfo[] = [
       { id: 1, title: "A", url: "https://example.com/page?a=1" },
       { id: 2, title: "B", url: "https://example.com/page?a=2" },
     ];
-    expect(findDuplicates(tabs)).toHaveLength(0);
+    expect(findDuplicates(queryTabs)).toHaveLength(0);
   });
 
   it("finds multiple duplicate groups", () => {
@@ -504,11 +502,15 @@ describe("parseResponse", () => {
   });
 
   it("throws on completely unparseable response", () => {
-    expect(() => parseResponse("I cannot help with that.", tabs)).toThrow();
+    expect(() => parseResponse("I cannot help with that.", tabs)).toThrow(
+      "Failed to parse LLM response as JSON",
+    );
   });
 
   it("throws on refusal", () => {
-    expect(() => parseResponse("I'm sorry, I can't assist with that request.", tabs)).toThrow();
+    expect(() => parseResponse("I'm sorry, I can't assist with that request.", tabs)).toThrow(
+      "Failed to parse LLM response as JSON",
+    );
   });
 
   it("throws on non-array JSON", () => {
@@ -557,18 +559,18 @@ describe("parseResponse", () => {
 
 // ---------- suggest ----------
 
+function mockLLM(content: string) {
+  vi.mocked(fetch).mockResolvedValue(
+    new Response(
+      JSON.stringify({
+        choices: [{ message: { content } }],
+      }),
+    ),
+  );
+}
+
 describe("suggest", () => {
   beforeEach(() => vi.mocked(fetch).mockReset());
-
-  function mockLLM(content: string) {
-    vi.mocked(fetch).mockResolvedValue(
-      new Response(
-        JSON.stringify({
-          choices: [{ message: { content } }],
-        }),
-      ),
-    );
-  }
 
   it("returns enriched suggestions from LLM", async () => {
     mockLLM(
@@ -644,7 +646,7 @@ describe("suggest", () => {
   });
 
   it("throws on LLM failure", async () => {
-    (globalThis as any).fetch = vi.fn(async () => {
+    (globalThis as any).fetch = vi.fn<typeof fetch>(async () => {
       throw new Error("timeout");
     });
     let caught: Error | null = null;

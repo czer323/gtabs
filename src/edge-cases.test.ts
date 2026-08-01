@@ -8,7 +8,6 @@ import {
   isTabUrlAllowed,
   hostnameFromUrl,
   isGroupedTab,
-  isImportantAppUrl,
   calculateCost,
   getTabs,
   organize,
@@ -23,7 +22,6 @@ import {
   getWorkspaces,
   saveWorkspace,
   removeWorkspace,
-  getSettings,
 } from "./storage";
 import { DEFAULT_SETTINGS } from "./types";
 import type { GroupSuggestion, WeightedAffinityEntry, RejectionEntry } from "./types";
@@ -35,20 +33,20 @@ beforeEach(() => {
 // ─── isTabUrlAllowed edge cases ───────────────────────────────────────────────
 
 describe("isTabUrlAllowed – edge cases", () => {
-  it("blocks about:newtab", () => expect(isTabUrlAllowed("about:newtab")).toBe(false));
+  it("blocks about:newtab", () => expect(isTabUrlAllowed("about:newtab")).toBeFalsy());
   it("blocks chrome-extension with path", () =>
-    expect(isTabUrlAllowed("chrome-extension://abc123/popup.html")).toBe(false));
+    expect(isTabUrlAllowed("chrome-extension://abc123/popup.html")).toBeFalsy());
   it("allows ftp:// URLs", () => expect(isTabUrlAllowed("ftp://files.example.com")).toBe(true));
   it("blocks data: URLs for privacy", () =>
-    expect(isTabUrlAllowed("data:text/html,hello")).toBe(false));
+    expect(isTabUrlAllowed("data:text/html,hello")).toBeFalsy());
   it("handles very long URLs", () => {
     const longUrl = "https://example.com/" + "a".repeat(2000);
     expect(isTabUrlAllowed(longUrl)).toBe(true);
   });
   it("handles URL with unicode characters", () =>
     expect(isTabUrlAllowed("https://münchen.de/path")).toBe(true));
-  it("handles edge://settings", () => expect(isTabUrlAllowed("edge://settings")).toBe(false));
-  it("blocks about:blank explicitly", () => expect(isTabUrlAllowed("about:blank")).toBe(false));
+  it("handles edge://settings", () => expect(isTabUrlAllowed("edge://settings")).toBeFalsy());
+  it("blocks about:blank explicitly", () => expect(isTabUrlAllowed("about:blank")).toBeFalsy());
 });
 
 // ─── hostnameFromUrl edge cases ───────────────────────────────────────────────
@@ -83,7 +81,7 @@ describe("isGroupedTab – edge cases", () => {
   it("handles groupId = Infinity", () => expect(isGroupedTab({ groupId: Infinity })).toBe(true));
   it("handles tab with extra properties", () =>
     expect(isGroupedTab({ groupId: 5, id: 1, title: "test" })).toBe(true));
-  it("handles empty object", () => expect(isGroupedTab({})).toBe(false));
+  it("handles empty object", () => expect(isGroupedTab({})).toBeFalsy());
   it("handles groupId = 1 (first real group)", () =>
     expect(isGroupedTab({ groupId: 1 })).toBe(true));
 });

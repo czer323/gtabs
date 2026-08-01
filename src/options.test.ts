@@ -63,9 +63,9 @@ describe("Options Page", () => {
 
     // Click a hosted provider and verify API key UI is shown
     (providerGrid!.children[1] as HTMLElement).click();
-    expect((document.getElementById("key-row") as HTMLElement).classList.contains("hidden")).toBe(
-      false,
-    );
+    expect(
+      (document.getElementById("key-row") as HTMLElement).classList.contains("hidden"),
+    ).toBeFalsy();
 
     // Test range bindings and auto-save
     const maxGroups = document.getElementById("maxGroups") as HTMLInputElement;
@@ -109,7 +109,9 @@ describe("Options Page", () => {
     expect(document.querySelector(".rule-domain")).toBeFalsy();
 
     // Test Export
-    global.URL.createObjectURL = vi.fn().mockReturnValue("blob:test");
+    global.URL.createObjectURL = vi
+      .fn<(blob: Blob | MediaSource) => string>()
+      .mockReturnValue("blob:test");
     const exportBtn = document.getElementById("export-data") as HTMLButtonElement;
     exportBtn.click();
     for (let i = 0; i < 5; i++) await new Promise((r) => process.nextTick(r));

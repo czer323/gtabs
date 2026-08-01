@@ -124,8 +124,9 @@ export async function getSettings(): Promise<Settings> {
   const syncSettings = sanitizeSettings(syncData[K.settings] as Partial<Settings>);
   const base: Settings = { ...syncSettings };
   // Prefer local API key (not synced across devices); fall back to sync (pre-migration)
-  if (localData[K_API_KEY_LOCAL] != null) {
-    base.apiKey = String(localData[K_API_KEY_LOCAL]).trim();
+  const localKey = localData[K_API_KEY_LOCAL];
+  if (typeof localKey === "string" && localKey.trim().length > 0) {
+    base.apiKey = localKey.trim();
   } else if (syncSettings.apiKey.trim().length > 0) {
     // One-time migration from sync -> local and scrub sync copy
     const migratedKey = syncSettings.apiKey.trim();
@@ -482,6 +483,7 @@ export function summarizeHistory(history: HistoryEntry[]): string {
   // Pick top group for each domain
   const lines: string[] = [];
   for (const [domain, groups] of Object.entries(freq)) {
+    // oxlint-disable-next-line unicorn/no-array-sort -- Array#toSorted requires ES2023 lib; project targets ES2022
     const top = Object.entries(groups).sort((a, b) => b[1] - a[1])[0];
     if (top[1] >= 3) lines.push(`  ${domain} → "${top[0]}" (${top[1]}x)`);
   }
@@ -518,8 +520,8 @@ export async function summarizeCorrections(corrections?: CorrectionEntry[]): Pro
     }
   }
   const lines: string[] = [];
-  for (const [domain, corrections] of Object.entries(freq)) {
-    for (const [label, count] of Object.entries(corrections)) {
+  for (const [domain, correctionMap] of Object.entries(freq)) {
+    for (const [label, count] of Object.entries(correctionMap)) {
       if (count >= 1) lines.push(`  User corrected: ${domain} from ${label} (${count}x)`);
     }
   }
@@ -637,6 +639,7 @@ export async function updateCoOccurrence(history: HistoryEntry[]): Promise<void>
       const domains = group.domains.slice(0, 20); // cap per group
       for (let i = 0; i < domains.length; i++) {
         for (let j = i + 1; j < domains.length; j++) {
+          // oxlint-disable-next-line unicorn/no-array-sort -- Array#toSorted requires ES2023 lib; project targets ES2022
           const pair = [domains[i], domains[j]].sort().join("|");
           matrix[pair] = (matrix[pair] ?? 0) + 1;
         }
@@ -651,6 +654,7 @@ export async function summarizeCoOccurrence(matrix?: Record<string, number>): Pr
   const data = matrix ?? (await getCoOccurrence());
   const entries = Object.entries(data)
     .filter(([, count]) => count >= 3)
+    // oxlint-disable-next-line unicorn/no-array-sort -- Array#toSorted requires ES2023 lib; project targets ES2022
     .sort((a, b) => b[1] - a[1]);
   if (!entries.length) return "";
 
@@ -706,7 +710,7 @@ export async function exportAll(): Promise<ExportData> {
   // Strip API key from export to prevent accidental exposure
   const { apiKey: _stripped, ...safeSettings } = settings;
   return {
-    settings: { ...safeSettings, apiKey: "" } as Settings,
+    settings: { ...safeSettings, apiKey: "" },
     affinity,
     domainRules,
     workspaces,

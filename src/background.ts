@@ -5,10 +5,7 @@ import type {
   MergeSplitResult,
   TabInfo,
   UndoSnapshot,
-  Workspace,
   WorkspaceTab,
-  CorrectionEntry,
-  RejectionEntry,
   SnoozedTab,
 } from "./types";
 import { MODEL_PRICING, SECONDARY_TLDS } from "./types";
@@ -49,15 +46,9 @@ import {
   saveWorkspace,
   removeWorkspace,
 } from "./storage";
-import {
-  suggest,
-  findDuplicates,
-  inferTargetGroup,
-  matchTabsToExistingGroups,
-  truncateTitle,
-} from "./grouper";
+import { suggest, findDuplicates, inferTargetGroup, matchTabsToExistingGroups } from "./grouper";
 import type { ExtraHints } from "./grouper";
-import { completeWithUsage, fetchOllamaModels, isChromeAIAvailable, testConnection } from "./llm";
+import { fetchOllamaModels, isChromeAIAvailable, testConnection } from "./llm";
 
 const ALARM_NAME = "gtabs-check";
 const REORG_ALARM_NAME = "gtabs-reorg";
@@ -127,6 +118,18 @@ export function isImportantAppUrl(url: string): boolean {
   );
 }
 
+const escMd = (s: string) => s.replace(/[[\]]/g, "\\$&");
+
+const baseDomain = (d: string) => {
+  const parts = d.split(".");
+  if (parts.length >= 3) {
+    const tld = parts[parts.length - 1];
+    const sld = parts[parts.length - 2];
+    if (tld.length === 2 && SECONDARY_TLDS.has(sld)) return parts.slice(-3).join(".");
+  }
+  return parts.slice(-2).join(".");
+};
+
 export function isGroupedTab(tab: { groupId?: number | undefined }): tab is { groupId: number } {
   return tab.groupId !== undefined && tab.groupId !== -1;
 }
@@ -163,10 +166,10 @@ async function groupTabsSafe(
     return groupId;
   }
   const createProperties = windowId !== undefined ? { windowId } : undefined;
-  return (await chrome.tabs.group({
+  return await chrome.tabs.group({
     tabIds: existing as [number, ...number[]],
     createProperties,
-  })) as number;
+  });
 }
 
 function toWorkspaceTab(
@@ -181,7 +184,7 @@ function toWorkspaceTab(
     pinned: Boolean(tab.pinned),
     active: Boolean(tab.active),
     groupName: group?.title || undefined,
-    groupColor: (group?.color as Color | undefined) || undefined,
+    groupColor: group?.color || undefined,
   };
 }
 
@@ -686,11 +689,16 @@ export async function sortCurrentGroupsByDomain(): Promise<number> {
   }
 
   const orderedBuckets = Array.from(buckets.values())
-    .map((bucket) => bucket.sort((a, b) => (a.index ?? 0) - (b.index ?? 0)))
+    .map((bucket) =>
+      // oxlint-disable-next-line unicorn/no-array-sort -- Array#toSorted requires ES2023 lib; project targets ES2022
+      bucket.sort((a, b) => (a.index ?? 0) - (b.index ?? 0)),
+    )
+    // oxlint-disable-next-line unicorn/no-array-sort -- Array#toSorted requires ES2023 lib; project targets ES2022
     .sort((a, b) => (a[0]?.index ?? 0) - (b[0]?.index ?? 0));
 
   for (const bucket of orderedBuckets) {
     const startIndex = bucket[0]?.index ?? 0;
+    // oxlint-disable-next-line unicorn/no-array-sort -- Array#toSorted requires ES2023 lib; project targets ES2022
     const sorted = [...bucket].sort((a, b) => {
       const hostDiff = hostnameFromUrl(a.url!).localeCompare(hostnameFromUrl(b.url!));
       if (hostDiff !== 0) return hostDiff;
@@ -716,8 +724,6 @@ export async function exportGroupsAsMarkdown(): Promise<string> {
   const tabs = await chrome.tabs.query({ currentWindow: true });
 
   const lines: string[] = ["# Tab Groups", ""];
-
-  const escMd = (s: string) => s.replace(/[[\]]/g, "\\$&");
 
   for (const group of groups) {
     lines.push(`## ${group.title || "Unnamed Group"}`);
@@ -788,9 +794,10 @@ export async function autoPinImportantApps(windowId?: number): Promise<number> {
       (tab) =>
         tab.id !== undefined &&
         isTabUrlAllowed(tab.url) &&
-        isImportantAppUrl(tab.url!) &&
+        isImportantAppUrl(tab.url) &&
         !isGroupedTab(tab),
     )
+    // oxlint-disable-next-line unicorn/no-array-sort -- Array#toSorted requires ES2023 lib; project targets ES2022
     .sort((a, b) => (a.index ?? 0) - (b.index ?? 0));
 
   let pinnedCount = 0;
@@ -798,8 +805,8 @@ export async function autoPinImportantApps(windowId?: number): Promise<number> {
     const tab = importantTabs[i];
     try {
       if (!tab.pinned) pinnedCount++;
-      await chrome.tabs.update(tab.id!, { pinned: true });
-      await chrome.tabs.move(tab.id!, { index: i });
+      await chrome.tabs.update(tab.id, { pinned: true });
+      await chrome.tabs.move(tab.id, { index: i });
     } catch {
       /* tab may have been closed during operation */
     }
@@ -896,7 +903,7 @@ export async function setupReorgAlarm(): Promise<void> {
   const settings = await getSettings();
 
   if (settings.reorgSchedule === "off") {
-    chrome.alarms.clear(REORG_ALARM_NAME);
+    await chrome.alarms.clear(REORG_ALARM_NAME);
     return;
   }
 
@@ -913,7 +920,7 @@ export async function setupReorgAlarm(): Promise<void> {
   const delayInMinutes = Math.max(1, (nextFire.getTime() - now.getTime()) / 60000);
   const periodInMinutes = settings.reorgSchedule === "daily" ? 1440 : 10080;
 
-  chrome.alarms.create(REORG_ALARM_NAME, { delayInMinutes, periodInMinutes });
+  await chrome.alarms.create(REORG_ALARM_NAME, { delayInMinutes, periodInMinutes });
 }
 
 async function checkAutoTrigger(): Promise<void> {
@@ -931,33 +938,35 @@ async function checkAutoTrigger(): Promise<void> {
 
 chrome.runtime.onMessage.addListener((msg: MessageType, _sender, sendResponse) => {
   if (msg.type === "organize") {
-    organize().then((r) =>
+    void organize().then((r) =>
       sendResponse({ type: "status", status: r.error ? "error" : "done", ...r }),
     );
     return true;
   }
 
   if (msg.type === "organize-ungrouped") {
-    organize(true).then((r) =>
+    void organize(true).then((r) =>
       sendResponse({ type: "status", status: r.error ? "error" : "done", ...r }),
     );
     return true;
   }
 
   if (msg.type === "apply") {
-    applyGroups(msg.suggestions).then(() => sendResponse({ type: "status", status: "applied" }));
+    void applyGroups(msg.suggestions).then(() =>
+      sendResponse({ type: "status", status: "applied" }),
+    );
     return true;
   }
 
   if (msg.type === "undo") {
-    undoLastGrouping().then((r) =>
+    void undoLastGrouping().then((r) =>
       sendResponse({ type: "status", status: r.error ? "error" : "undone", error: r.error }),
     );
     return true;
   }
 
   if (msg.type === "find-duplicates") {
-    findDuplicateTabs().then((duplicates) =>
+    void findDuplicateTabs().then((duplicates) =>
       sendResponse({ type: "status", status: "done", duplicates }),
     );
     return true;
@@ -1029,17 +1038,17 @@ chrome.runtime.onMessage.addListener((msg: MessageType, _sender, sendResponse) =
   }
 
   if (msg.type === "get-stats") {
-    getStats().then((stats) => sendResponse({ type: "status", status: "done", stats }));
+    void getStats().then((stats) => sendResponse({ type: "status", status: "done", stats }));
     return true;
   }
 
   if (msg.type === "get-costs") {
-    getCosts().then((costs) => sendResponse({ type: "status", status: "done", costs }));
+    void getCosts().then((costs) => sendResponse({ type: "status", status: "done", costs }));
     return true;
   }
 
   if (msg.type === "export-data") {
-    exportAll().then((data) => sendResponse({ type: "status", status: "done", data }));
+    void exportAll().then((data) => sendResponse({ type: "status", status: "done", data }));
     return true;
   }
 
@@ -1091,7 +1100,7 @@ chrome.runtime.onMessage.addListener((msg: MessageType, _sender, sendResponse) =
   }
 
   if (msg.type === "record-corrections") {
-    (async () => {
+    void (async () => {
       await addCorrections(msg.corrections);
       // Apply correction weight (3x) to weighted affinity
       const correctedSuggestions: GroupSuggestion[] = [];
@@ -1163,7 +1172,7 @@ chrome.runtime.onMessage.addListener((msg: MessageType, _sender, sendResponse) =
   }
 
   if (msg.type === "search-tabs") {
-    (async () => {
+    void (async () => {
       try {
         const windowId = await getCurrentWindowId();
         const groups = await chrome.tabGroups.query({ windowId });
@@ -1199,7 +1208,7 @@ chrome.runtime.onMessage.addListener((msg: MessageType, _sender, sendResponse) =
   }
 
   if (msg.type === "get-group-stats") {
-    (async () => {
+    void (async () => {
       try {
         const windowId = await getCurrentWindowId();
         const groups = await chrome.tabGroups.query({ windowId });
@@ -1234,7 +1243,7 @@ chrome.runtime.onMessage.addListener((msg: MessageType, _sender, sendResponse) =
   }
 
   if (msg.type === "snooze-tabs") {
-    (async () => {
+    void (async () => {
       try {
         let count = 0;
         for (const tabId of msg.tabIds) {
@@ -1250,7 +1259,7 @@ chrome.runtime.onMessage.addListener((msg: MessageType, _sender, sendResponse) =
             };
             await addSnoozedTab(entry);
             const delayMs = Math.max(60000, msg.wakeAt - Date.now());
-            chrome.alarms.create(`${SNOOZE_ALARM_PREFIX}${snoozeId}`, {
+            await chrome.alarms.create(`${SNOOZE_ALARM_PREFIX}${snoozeId}`, {
               delayInMinutes: Math.ceil(delayMs / 60000),
             });
             await chrome.tabs.remove(tabId);
@@ -1324,6 +1333,8 @@ chrome.runtime.onMessage.addListener((msg: MessageType, _sender, sendResponse) =
       );
     return true;
   }
+
+  return false;
 });
 
 let commandInFlight = false;
@@ -1341,15 +1352,15 @@ chrome.commands?.onCommand?.addListener((command: string) => {
       : command === "undo-grouping"
         ? undoLastGrouping()
         : null;
-  (p || Promise.resolve()).finally(() => {
+  void (p || Promise.resolve()).finally(() => {
     commandInFlight = false;
     if (commandInFlightTimer) clearTimeout(commandInFlightTimer);
   });
 });
 
 chrome.runtime.onInstalled.addListener(() => {
-  chrome.alarms.create(ALARM_NAME, { periodInMinutes: 2 });
-  setupReorgAlarm();
+  void chrome.alarms.create(ALARM_NAME, { periodInMinutes: 2 });
+  void setupReorgAlarm();
   return rebuildContextMenus();
 });
 
@@ -1362,7 +1373,7 @@ chrome.contextMenus?.onClicked?.addListener((info) => {
   const menuId = String(info.menuItemId);
   if (menuId === `${CTX_ADD_TO_GROUP_ID}-new` && info.tab?.id !== undefined) {
     const tabId = info.tab.id;
-    (async () => {
+    void (async () => {
       const newGroupId = await groupTabsSafe([tabId]);
       if (newGroupId === null) return;
       await chrome.tabGroups.update(newGroupId, { title: "New Group", collapsed: false });
@@ -1379,26 +1390,26 @@ chrome.contextMenus?.onClicked?.addListener((info) => {
 chrome.tabGroups?.onCreated?.addListener(() => rebuildContextMenus());
 chrome.tabGroups?.onRemoved?.addListener(() => rebuildContextMenus());
 chrome.tabGroups?.onUpdated?.addListener((group) => {
-  rebuildContextMenus();
+  void rebuildContextMenus();
   if (group.title && group.color) {
-    saveGroupColorPref(group.title, group.color as Color).catch(() => {});
+    saveGroupColorPref(group.title, group.color).catch(() => {});
   }
 });
 
 chrome.alarms.onAlarm.addListener((alarm) => {
   if (alarm.name === ALARM_NAME) triggerAutoCheck();
   if (alarm.name === REORG_ALARM_NAME) {
-    getSettings().then((settings) => {
+    void getSettings().then((settings) => {
       if (settings.reorgSchedule !== "off") {
-        organize(settings.mergeMode).then((result) => {
-          if (result.suggestions?.length) applyGroups(result.suggestions);
+        void organize(settings.mergeMode).then((result) => {
+          if (result.suggestions?.length) void applyGroups(result.suggestions);
         });
       }
     });
   }
   if (alarm.name.startsWith(SNOOZE_ALARM_PREFIX)) {
     const snoozeId = alarm.name.slice(SNOOZE_ALARM_PREFIX.length);
-    (async () => {
+    void (async () => {
       try {
         const tabs = await getSnoozedTabs();
         const entry = tabs.find((t) => t.id === snoozeId);
@@ -1474,7 +1485,7 @@ chrome.tabs.onActivated?.addListener((activeInfo: { tabId: number }) => {
 
 chrome.storage?.onChanged?.addListener((changes, areaName) => {
   if (areaName === "sync" && changes.settings) {
-    setupReorgAlarm();
+    void setupReorgAlarm();
   }
 });
 
@@ -1493,16 +1504,6 @@ chrome.tabs.onUpdated?.addListener(async (tabId, changeInfo, tab) => {
         const newDomain = hostnameFromUrl(tab.url);
         if (otherTabs.length > 0 && newDomain) {
           const groupDomains = otherTabs.map((t) => hostnameFromUrl(t.url!)).filter(Boolean);
-          // Handle ccTLDs like .co.uk, .com.au
-          const baseDomain = (d: string) => {
-            const parts = d.split(".");
-            if (parts.length >= 3) {
-              const tld = parts[parts.length - 1];
-              const sld = parts[parts.length - 2];
-              if (tld.length === 2 && SECONDARY_TLDS.has(sld)) return parts.slice(-3).join(".");
-            }
-            return parts.slice(-2).join(".");
-          };
           const isRelated = groupDomains.some((d) => baseDomain(d) === baseDomain(newDomain));
           if (!isRelated) {
             await ungroupTabsSafe([tabId]);

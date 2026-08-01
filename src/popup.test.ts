@@ -29,7 +29,7 @@ describe("Popup Page", () => {
 
     // Verify initial load processed pending suggestions
     expect(document.getElementById("status")?.textContent).toContain("1 pending");
-    expect((document.getElementById("apply-all") as HTMLButtonElement).hidden).toBe(false);
+    expect((document.getElementById("apply-all") as HTMLButtonElement).hidden).toBeFalsy();
 
     // Organize Button
     const btnOrganize = document.getElementById("organize") as HTMLButtonElement;
@@ -46,7 +46,7 @@ describe("Popup Page", () => {
 
     // Apply Button reveals
     const btnApply = document.getElementById("apply-all") as HTMLButtonElement;
-    expect(btnApply.hidden).toBe(false);
+    expect(btnApply.hidden).toBeFalsy();
 
     // Apply Button click
     btnApply.click();

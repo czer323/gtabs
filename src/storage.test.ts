@@ -445,7 +445,7 @@ describe("export/import", () => {
     await saveSettings({ ...DEFAULT_SETTINGS, apiKey: "secret", provider: "groq" });
     await saveDomainRules([{ domain: "test.com", groupName: "T", color: "orange" }]);
     const exported = await exportAll();
-    await resetStores();
+    resetStores();
     await importAll(exported);
     expect((await getSettings()).provider).toBe("groq");
     expect((await getDomainRules())[0].domain).toBe("test.com");
@@ -708,7 +708,7 @@ describe("rejections", () => {
       { timestamp: now, domain: "news.com", rejectedGroup: "Dev" },
     ];
     expect(isRejected("news.com", "Dev", rejections, now)).toBe(true);
-    expect(isRejected("news.com", "News", rejections, now)).toBe(false);
+    expect(isRejected("news.com", "News", rejections, now)).toBeFalsy();
   });
 
   it("isRejected ignores old rejections", () => {
@@ -717,7 +717,7 @@ describe("rejections", () => {
     const rejections: RejectionEntry[] = [
       { timestamp: oldTimestamp, domain: "news.com", rejectedGroup: "Dev" },
     ];
-    expect(isRejected("news.com", "Dev", rejections, now)).toBe(false);
+    expect(isRejected("news.com", "Dev", rejections, now)).toBeFalsy();
   });
 
   it("summarizes rejections", async () => {

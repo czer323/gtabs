@@ -66,13 +66,10 @@ export function resetAllMocks() {
     .mockResolvedValue([] as any);
   vi.mocked(chrome.tabs.update)
     .mockReset()
-    .mockImplementation(
-      async (tabId: number, updateProperties: any) =>
-        ({
-          id: tabId,
-          ...updateProperties,
-        }) as any,
-    );
+    .mockImplementation(async (tabId: number, updateProperties: any) => ({
+      id: tabId,
+      ...updateProperties,
+    }));
   vi.mocked(chrome.tabs.discard)
     .mockReset()
     .mockResolvedValue(undefined as any);
@@ -124,13 +121,10 @@ export function resetAllMocks() {
     });
   vi.mocked(chrome.bookmarks.create)
     .mockReset()
-    .mockImplementation(
-      async (bookmark: any) =>
-        ({
-          id: String(groupIdCounter++),
-          ...bookmark,
-        }) as any,
-    );
+    .mockImplementation(async (bookmark: any) => ({
+      id: String(groupIdCounter++),
+      ...bookmark,
+    }));
   vi.mocked(chrome.action.setBadgeText).mockReset().mockResolvedValue(undefined);
   vi.mocked(chrome.action.setBadgeBackgroundColor).mockReset().mockResolvedValue(undefined);
   vi.mocked(chrome.runtime.openOptionsPage)
@@ -216,11 +210,8 @@ let groupIdCounter = 100;
   },
 };
 
-(globalThis as any).navigator = {
-  ...globalThis.navigator,
-  clipboard: {
-    writeText: vi.fn(() => Promise.resolve()),
-  },
-};
+(globalThis as any).navigator = Object.assign(globalThis.navigator, {
+  clipboard: { writeText: vi.fn(() => Promise.resolve()) },
+});
 
 (globalThis as any).fetch = vi.fn();

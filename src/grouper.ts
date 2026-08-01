@@ -11,7 +11,7 @@ import type {
   RejectionEntry,
 } from "./types";
 import { COLORS } from "./types";
-import { extractPathKey, computeDecayedWeight, pickBestWeightedGroup } from "./storage";
+import { extractPathKey, pickBestWeightedGroup } from "./storage";
 
 export function truncateTitle(title: string, maxLen: number): string {
   if (title.length <= maxLen) return title;
@@ -88,10 +88,10 @@ export function applyDomainRules(
     }
   }
 
-  const matched = Array.from(groups.values()).map(({ rule, tabs }) => ({
+  const matched = Array.from(groups.values()).map(({ rule, tabs: groupTabs }) => ({
     name: rule.groupName,
     color: rule.color,
-    tabs,
+    tabs: groupTabs,
   }));
 
   return { matched, remaining };
@@ -168,12 +168,15 @@ export interface ExtraHints {
 
 /** Strip characters that could break JSON or inject prompt instructions */
 function sanitizeForPrompt(text: string): string {
-  return text
-    .replace(/[\u0000-\u001F\u007F]/g, " ")
-    .replace(/[\r\n]+/g, " ")
-    .replace(/["`]/g, "'")
-    .replace(/\s+/g, " ")
-    .trim();
+  return (
+    text
+      // oxlint-disable-next-line eslint/no-control-regex -- intentionally strip control chars from LLM prompt text; Unicode-escaped form is still flagged by oxlint
+      .replace(/[\u{0000}-\u{001F}\u{007F}]/gu, " ")
+      .replace(/[\r\n]+/g, " ")
+      .replace(/["`]/g, "'")
+      .replace(/\s+/g, " ")
+      .trim()
+  );
 }
 
 export function buildPrompt(
@@ -310,7 +313,10 @@ export function parseResponse(raw: string, tabs: TabInfo[]): GroupSuggestion[] {
   try {
     parsed = JSON.parse(json);
   } catch (err) {
-    throw new Error(`Failed to parse LLM response as JSON. Length: ${raw.length}, Error: ${err}`);
+    throw new Error(
+      `Failed to parse LLM response as JSON. Length: ${raw.length}, Error: ${err instanceof Error ? err.message : String(err)}`,
+      { cause: err },
+    );
   }
 
   if (!Array.isArray(parsed)) throw new Error("Response is not an array");
@@ -321,7 +327,7 @@ export function parseResponse(raw: string, tabs: TabInfo[]): GroupSuggestion[] {
     .filter(validateGroup)
     .map((g) => {
       const name = String(g.name || "Unnamed").slice(0, 50);
-      const color = (COLORS.includes(g.color as Color) ? g.color : "grey") as Color;
+      const color = COLORS.includes(g.color) ? g.color : "grey";
       const tabIds = g.tabIds
         .map((id: unknown) => (typeof id === "number" ? id : Number(id)))
         .filter((id: number) => !isNaN(id) && validIds.has(id) && !assignedIds.has(id));
@@ -341,7 +347,7 @@ export function collectUnassigned(
   const assignedIds = new Set(groups.flatMap((g) => g.tabs.map((t) => t.id)));
   const missing = allTabs.filter((t) => !assignedIds.has(t.id));
   if (missing.length > 0) {
-    return [...groups, { name: "Other", color: "grey" as Color, tabs: missing }];
+    return [...groups, { name: "Other", color: "grey", tabs: missing }];
   }
   return groups;
 }
