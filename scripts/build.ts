@@ -1,9 +1,9 @@
-import { build, context } from "esbuild";
-import { cpSync, mkdirSync, rmSync } from "fs";
+import { build, context, type BuildOptions } from "esbuild";
+import { cpSync, mkdirSync, rmSync } from "node:fs";
 
 const isWatch = process.argv.includes("--watch");
 
-const common = {
+const common: BuildOptions = {
   bundle: true,
   sourcemap: true,
   target: "chrome120",

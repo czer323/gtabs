@@ -43,10 +43,16 @@ export function resetStores() {
 export function resetAllMocks() {
   resetStores();
   groupIdCounter = 100;
-  vi.mocked(chrome.tabs.query).mockReset().mockResolvedValue([]);
-  vi.mocked(chrome.tabs.group).mockReset().mockResolvedValue(100);
-  vi.mocked(chrome.tabs.ungroup).mockReset().mockResolvedValue(undefined);
-  vi.mocked(chrome.tabs.create)
+  vi.mocked(chrome.tabs.query as any)
+    .mockReset()
+    .mockResolvedValue([]);
+  vi.mocked(chrome.tabs.group as any)
+    .mockReset()
+    .mockResolvedValue(100);
+  vi.mocked(chrome.tabs.ungroup as any)
+    .mockReset()
+    .mockResolvedValue(undefined);
+  vi.mocked(chrome.tabs.create as any)
     .mockReset()
     .mockImplementation(
       async (createProperties: any) =>
@@ -61,22 +67,22 @@ export function resetAllMocks() {
           groupId: -1,
         }) as any,
     );
-  vi.mocked(chrome.tabs.move)
+  vi.mocked(chrome.tabs.move as any)
     .mockReset()
     .mockResolvedValue([] as any);
-  vi.mocked(chrome.tabs.update)
+  vi.mocked(chrome.tabs.update as any)
     .mockReset()
     .mockImplementation(async (tabId: number, updateProperties: any) => ({
       id: tabId,
       ...updateProperties,
     }));
-  vi.mocked(chrome.tabs.discard)
+  vi.mocked(chrome.tabs.discard as any)
     .mockReset()
     .mockResolvedValue(undefined as any);
-  vi.mocked(chrome.tabs.remove)
+  vi.mocked(chrome.tabs.remove as any)
     .mockReset()
     .mockResolvedValue(undefined as any);
-  vi.mocked(chrome.tabs.get)
+  vi.mocked(chrome.tabs.get as any)
     .mockReset()
     .mockImplementation(
       async (tabId: number) =>
@@ -86,48 +92,54 @@ export function resetAllMocks() {
           windowId: 1,
         }) as any,
     );
-  vi.mocked(chrome.tabGroups.query).mockReset().mockResolvedValue([]);
-  vi.mocked(chrome.tabGroups.update)
+  vi.mocked(chrome.tabGroups.query as any)
+    .mockReset()
+    .mockResolvedValue([]);
+  vi.mocked(chrome.tabGroups.update as any)
     .mockReset()
     .mockResolvedValue(undefined as any);
-  vi.mocked(chrome.windows.getCurrent)
+  vi.mocked(chrome.windows.getCurrent as any)
     .mockReset()
     .mockResolvedValue({ id: 1 } as any);
-  vi.mocked(chrome.windows.getLastFocused)
+  vi.mocked(chrome.windows.getLastFocused as any)
     .mockReset()
     .mockResolvedValue({ id: 1 } as any);
-  vi.mocked(chrome.windows.getAll)
+  vi.mocked(chrome.windows.getAll as any)
     .mockReset()
     .mockResolvedValue([{ id: 1, tabs: [] }] as any);
-  vi.mocked(chrome.windows.create)
+  vi.mocked(chrome.windows.create as any)
     .mockReset()
     .mockResolvedValue({ id: 2 } as any);
-  vi.mocked(chrome.contextMenus.create)
+  vi.mocked(chrome.contextMenus.create as any)
     .mockReset()
     .mockImplementation((_props: any, callback?: () => void) => {
       callback?.();
     });
-  vi.mocked(chrome.contextMenus.remove)
+  vi.mocked(chrome.contextMenus.remove as any)
     .mockReset()
     .mockImplementation((_menuItemId: any, callback?: () => void) => {
       callback?.();
       return Promise.resolve(undefined as any) as any;
     });
-  vi.mocked(chrome.contextMenus.removeAll)
+  vi.mocked(chrome.contextMenus.removeAll as any)
     .mockReset()
     .mockImplementation((callback?: () => void) => {
       callback?.();
       return Promise.resolve(undefined as any) as any;
     });
-  vi.mocked(chrome.bookmarks.create)
+  vi.mocked(chrome.bookmarks.create as any)
     .mockReset()
     .mockImplementation(async (bookmark: any) => ({
       id: String(groupIdCounter++),
       ...bookmark,
     }));
-  vi.mocked(chrome.action.setBadgeText).mockReset().mockResolvedValue(undefined);
-  vi.mocked(chrome.action.setBadgeBackgroundColor).mockReset().mockResolvedValue(undefined);
-  vi.mocked(chrome.runtime.openOptionsPage)
+  vi.mocked(chrome.action.setBadgeText as any)
+    .mockReset()
+    .mockResolvedValue(undefined);
+  vi.mocked(chrome.action.setBadgeBackgroundColor as any)
+    .mockReset()
+    .mockResolvedValue(undefined);
+  vi.mocked(chrome.runtime.openOptionsPage as any)
     .mockReset()
     .mockResolvedValue(undefined as any);
   vi.mocked(fetch).mockReset();
