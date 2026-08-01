@@ -15,7 +15,8 @@ gTabs is a Chrome extension for AI-powered tab organization.
 
 `npm install` - install dependencies
 `npm install --save-dev <name>` - add new dev dependency
-`npm run check` - full verification: test, format check, lint, typecheck
+`npm run check` - full verification: test, format check, lint, typecheck. Does not modify files.
+`npm run fix` - auto-fix formatting and lint issues, then run full verification
 `npm test` - run unit tests once
 `npm run build` - build extension
 `npm run lint` - lint with token-saving output - Does not auto-fix
@@ -27,7 +28,7 @@ gTabs is a Chrome extension for AI-powered tab organization.
 - **Types**: Keep shared types in `src/types.ts` where they are reused across bundles.
 - **UI**: Vanilla TypeScript with plain HTML pages (popup, options). No framework.
 - **Storage**: All persistence via `chrome.storage` — see `src/storage.ts`.
-- **Tests**: Tests live in `test/`, named `*.test.ts` following Vitest conventions. Run against jsdom with `chrome.*` APIs mocked via `test/setup.ts`.
+- **Tests**: Named `*.test.ts` or `*.test.mjs`, co-located with the code they test — the `.test.` infix in the filename distinguishes them. Run against jsdom with `chrome.*` APIs mocked via `test/setup.ts`.
 
 ### Repo Hygiene
 
@@ -35,7 +36,7 @@ gTabs is a Chrome extension for AI-powered tab organization.
 
 <!--Karpathy Rules-->
 
-## Karpathy Guidelines 12 Rules
+## Karpathy Guidelines Rules
 
 1. **Think before coding.** State assumptions out loud. Surface tradeoffs. Push back when a simpler approach exists. No silent guesses.
 2. **Simplicity first.** Minimum code that solves the stated problem. No speculative features. No abstractions for single-use code.
@@ -86,7 +87,7 @@ NEVER delete and re-push a branch as a troubleshooting step.
 
 # Spec Writing Convention: Caveman Micro
 
-Specs in this repo are contracts. Reduce ambiguity. Write specs in caveman style.
+Specs and technical writing in this repo are contracts. Reduce ambiguity. Write specs and contracts in caveman style.
 
 ## Rules
 
@@ -95,10 +96,6 @@ Specs in this repo are contracts. Reduce ambiguity. Write specs in caveman style
 - No hedging. Fragments fine. Short synonyms.
 - Technical terms stay exact. Code blocks unchanged.
 - Pattern: [thing] [action] [reason]. [next step].
-
-## Why
-
-Caveman removes interpretation slack. "The system should probably validate the RT field" → "System validates RT field. Negative RT allowed." Less words, less ambiguity, stronger contract.
 
 ## Where
 
