@@ -71,10 +71,11 @@ src/
   background.ts      Service worker — orchestrates all features
   popup.ts / .html   Action popup UI
   options.ts / .html Full settings page
-test/
-  setup.ts           Chrome API mocks and storage fakes
-  *.test.ts          Test files (one per source module, plus integration)
-build.mjs            esbuild configuration
+  *.test.ts          Co-located tests (one per source module, plus integration)
+scripts/
+  build.ts           esbuild configuration and bundling
+  check.ts           Quality gate runner (test, format, lint, typecheck)
+vitest.setup.ts      Chrome API mocks and storage fakes
 ```
 
 See [ARCHITECTURE.md](ARCHITECTURE.md) for a deeper breakdown of how the modules fit together.
