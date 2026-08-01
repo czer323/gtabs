@@ -215,3 +215,51 @@ let groupIdCounter = 100;
 });
 
 (globalThis as any).fetch = vi.fn();
+
+// --- jsdomError warnings policy ---
+// jsdom implements a handful of APIs as stubs that emit `jsdomError` events
+// ("Not implemented: ...") instead of doing real work. Vitest 4's jsdom environment
+// passes no virtual console, so jsdom's default virtual console forwards every
+// jsdomError to stderr. Two of those stubs are exercised on purpose by this suite:
+//   - window.alert()  — import feedback in src/options.ts (and CSV-rule feedback)
+//   - navigation     — the export download anchor click (jsdom cannot navigate)
+// They are deliberate no-ops in jsdom and produce known-good output in Chrome, so
+// allowlist them here to keep them quiet. EVERY other jsdomError still prints: a
+// new/unexpected "Not implemented" line is a tripwire that a test now relies on an
+// unimplemented API and should be audited. See src/options.test.ts for the
+// window.alert spy, which silences the alert stub at its source in the failure test.
+const KNOWN_BENIGN_JSDOM_ERRORS = new Set([
+  "Not implemented: Window's alert() method",
+  "Not implemented: navigation to another Document",
+]);
+
+interface JsdomError {
+  message: string;
+  type?: string;
+  cause?: { stack?: string };
+}
+
+interface JsdomVirtualConsole {
+  removeAllListeners(event: string): unknown;
+  on(event: "jsdomError", listener: (error: JsdomError) => void): unknown;
+}
+
+function applyJsdomWarningsPolicy(): void {
+  // The vitest jsdom environment exposes the JSDOM instance on the global; its
+  // public `virtualConsole` is the default one jsdom created (forwarding every
+  // jsdomError to console.error). Swap its jsdomError handler for the filtered one.
+  const virtualConsole = (globalThis as { jsdom?: { virtualConsole?: JsdomVirtualConsole } }).jsdom
+    ?.virtualConsole;
+  if (!virtualConsole) return;
+  virtualConsole.removeAllListeners("jsdomError");
+  virtualConsole.on("jsdomError", (error) => {
+    if (KNOWN_BENIGN_JSDOM_ERRORS.has(error.message)) return;
+    // Mirror jsdom's default forwarding (lib/jsdom/virtual-console.js): write to
+    // raw stderr, bypassing vitest's console interception, so unexpected
+    // jsdomErrors stay visible even under the default (dot) reporter.
+    const line =
+      error.type === "unhandled-exception" ? (error.cause?.stack ?? error.message) : error.message;
+    process.stderr.write(`${line}\n`);
+  });
+}
+applyJsdomWarningsPolicy();

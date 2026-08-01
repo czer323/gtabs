@@ -3,7 +3,8 @@ import { readFileSync } from "fs";
 import { resolve } from "path";
 import { resetAllMocks } from "../vitest.setup";
 import { DEFAULT_SETTINGS } from "./types";
-import * as storage from "./storage";
+// NOTE: `./storage` is imported dynamically inside each test, after `vi.resetModules()`,
+// so spies target the same module instance that `./options` uses after its re-import.
 
 const html = readFileSync(resolve(__dirname, "./options.html"), "utf-8");
 
@@ -12,6 +13,9 @@ describe("Options Page", () => {
     document.body.innerHTML = html;
     resetAllMocks();
     vi.clearAllMocks();
+    // Each test re-executes ./options against fresh DOM; without this, the module is
+    // cached and the init script never re-runs, leaving listeners on dead elements.
+    vi.resetModules();
 
     // Reset chrome.runtime.sendMessage
     let testConnectionCallCount = 0;
@@ -37,11 +41,13 @@ describe("Options Page", () => {
           testConnectionCallCount === 1 ? { status: "done" } : { status: "error", error: "Failed" },
         );
       } else if (msg.type === "export-data") cb({ data: { test: 1 } });
+      else if (msg.type === "import-data") cb({ status: "imported" });
       else cb({ status: "done" });
     });
   });
 
   it("loads and initializes the page with default settings", async () => {
+    const storage = await import("./storage");
     vi.spyOn(storage, "getSettings").mockResolvedValue(DEFAULT_SETTINGS);
     vi.spyOn(storage, "getDomainRules").mockResolvedValue([]);
     const saveSpy = vi.spyOn(storage, "saveSettings").mockResolvedValue();
@@ -127,5 +133,64 @@ describe("Options Page", () => {
     });
     importFile.dispatchEvent(new Event("change"));
     for (let i = 0; i < 5; i++) await new Promise((r) => process.nextTick(r));
+  });
+
+  it("reloads settings after a successful import", async () => {
+    const storage = await import("./storage");
+    vi.spyOn(storage, "getDomainRules").mockResolvedValue([]);
+    vi.spyOn(storage, "saveSettings").mockResolvedValue();
+    vi.spyOn(storage, "saveDomainRules").mockResolvedValue();
+    // Page init reads DEFAULT_SETTINGS; the import reload (success path) reads these.
+    const getSettingsSpy = vi
+      .spyOn(storage, "getSettings")
+      .mockResolvedValueOnce(DEFAULT_SETTINGS)
+      .mockResolvedValue({ ...DEFAULT_SETTINGS, maxGroups: 12 });
+
+    await import("./options");
+    for (let i = 0; i < 15; i++) await new Promise((r) => process.nextTick(r));
+
+    // Init rendered the defaults.
+    expect((document.getElementById("maxGroups") as HTMLInputElement).value).toBe(
+      String(DEFAULT_SETTINGS.maxGroups),
+    );
+
+    const importFile = document.getElementById("import-file") as HTMLInputElement;
+    Object.defineProperty(importFile, "files", {
+      value: [new File([JSON.stringify({ settings: DEFAULT_SETTINGS })], "export.json")],
+    });
+    importFile.dispatchEvent(new Event("change"));
+    for (let i = 0; i < 15; i++) await new Promise((r) => process.nextTick(r));
+
+    // import-data resolved {status:"imported"}, so the success path re-ran load(),
+    // which re-reads settings and re-rendered them from the reloaded value (in-range
+    // for the maxGroups range input, which clamps out-of-range values).
+    expect(getSettingsSpy).toHaveBeenCalledTimes(2);
+    expect((document.getElementById("maxGroups") as HTMLInputElement).value).toBe("12");
+    expect((document.getElementById("maxGroupsVal") as HTMLElement).textContent).toBe("12");
+  });
+
+  it("alerts with the error message when import fails", async () => {
+    const storage = await import("./storage");
+    vi.spyOn(storage, "getSettings").mockResolvedValue(DEFAULT_SETTINGS);
+    vi.spyOn(storage, "getDomainRules").mockResolvedValue([]);
+    // The spy both asserts the dialog and silences jsdom's "Not implemented: alert" stub.
+    const alertSpy = vi.spyOn(window, "alert").mockImplementation(() => {});
+
+    await import("./options");
+    for (let i = 0; i < 15; i++) await new Promise((r) => process.nextTick(r));
+
+    (chrome.runtime.sendMessage as any).mockImplementationOnce((msg: any, cb: Function) => {
+      if (msg.type === "import-data") cb({ status: "error", error: "Import failed" });
+    });
+
+    const importFile = document.getElementById("import-file") as HTMLInputElement;
+    Object.defineProperty(importFile, "files", {
+      value: [new File([JSON.stringify({ bad: true })], "export.json")],
+    });
+    importFile.dispatchEvent(new Event("change"));
+    for (let i = 0; i < 15; i++) await new Promise((r) => process.nextTick(r));
+
+    // Handler saw {status:"error"} !== "imported" and alerted the error message.
+    expect(alertSpy).toHaveBeenCalledWith("Import failed");
   });
 });
