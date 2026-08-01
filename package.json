@@ -13,7 +13,8 @@
     "format": "oxfmt",
     "format:check": "oxfmt --check",
     "typecheck": "tsc --noEmit",
-    "check": "npm test && npm run format:check && npm run lint && npm run typecheck"
+    "check": "node scripts/check.mjs",
+    "fix": "npm run format && npm run lint -- --fix && npm run check"
   },
   "devDependencies": {
     "@types/chrome": "^0.1.38",
