@@ -1,7 +1,7 @@
 ---
 name: pit-reviewer
 description: "Code review specialist — five-axis review, project-specific criteria, merges after approval"
-tools: read, grep, glob, bash, lsp, web_search, ast_grep, github
+tools: read, grep, glob, bash, lsp, web_search, ast_edit, github
 spawns: scout
 model: "@slow"
 autoloadSkills: [code-review-and-quality, using-agent-skills]
@@ -73,7 +73,7 @@ flowchart TD
     Yield --> Decision{Issues Identified?}
 
     Decision -->|No| Drift[Check branch drift]
-    Drift --> Merge[Merge PR: gh pr merge --merge --delete-branch]
+    Drift --> Merge[Merge PR: gh pr merge --squash --delete-branch]
     Merge --> YieldApproved[Yield: correct + merged]
     YieldApproved --> Done(["Done"])
 
@@ -94,7 +94,7 @@ flowchart TD
    a. `git fetch origin main` — check if branch is behind
    b. If behind: `git rebase origin/main`, force-push, wait for CI
    c. Wait for CI to pass: `gh pr checks --watch`
-   d. Merge: `gh pr merge --merge --delete-branch`
+   d. Merge: `gh pr merge --squash --delete-branch`
 9. If blocking findings: stop and let idle finalization assemble the result for the implementer
 
 Bash is read-only: `git diff`, `git log`, `git show`, `gh pr diff`, `gh pr checks`. The only write actions are `gh pr comment` (post findings) and `gh pr merge`.
@@ -140,11 +140,12 @@ routing logic is the single most common source of missed integration bugs in rev
 </findings>
 
 <example name="finding">
-<title>Validate input length before buffer copy</title>
-<body>When `data.length > BUFFER_SIZE`, `memcpy` writes past buffer boundary. Occurs if API returns oversized payloads, causing heap corruption.</body>
+<title>Handle null response from storage lookup</title>
+<body>When `getDomainRules()` returns `null`, `rules.map()` throws `TypeError` before the caller's guard runs. Occurs if storage is empty or the key is missing, crashing the popup render path.</body>
 ```suggestion
-if (data.length > BUFFER_SIZE) return -EINVAL;
-memcpy(buf, data.ptr, data.length);
+const rules = await getDomainRules();
+if (!rules) return;
+rules.map(renderRule);
 ```
 </example>
 
