@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach, vi } from "vitest";
-import { resetStores } from "./setup";
+import { resetStores } from "../vitest.setup";
 import {
   getSettings,
   saveSettings,
@@ -40,10 +40,10 @@ import {
   updateCoOccurrence,
   summarizeCoOccurrence,
   pickBestWeightedGroup,
-} from "../src/storage";
-import { DEFAULT_SETTINGS, DEFAULT_STATS, DEFAULT_COSTS } from "../src/types";
-import type { WeightedAffinityEntry, RejectionEntry, HistoryEntry } from "../src/types";
-import type { GroupSuggestion, DomainRule, UndoSnapshot, ExportData } from "../src/types";
+} from "./storage";
+import { DEFAULT_SETTINGS, DEFAULT_STATS, DEFAULT_COSTS } from "./types";
+import type { WeightedAffinityEntry, RejectionEntry, HistoryEntry } from "./types";
+import type { GroupSuggestion, DomainRule, UndoSnapshot, ExportData } from "./types";
 
 beforeEach(() => resetStores());
 

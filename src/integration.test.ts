@@ -3,8 +3,8 @@
  * Tests the full pipeline through message dispatch without DOM dependency.
  */
 import { describe, it, expect, vi, beforeEach } from "vitest";
-import { resetAllMocks, resetStores } from "./setup";
-import { DEFAULT_SETTINGS } from "../src/types";
+import { resetAllMocks, resetStores } from "../vitest.setup";
+import { DEFAULT_SETTINGS } from "./types";
 
 // Helper: flush microtasks
 async function flush(n = 20) {
@@ -25,10 +25,10 @@ describe("E2E Integration: Message dispatch → Background → Storage", () => {
     (chrome.runtime.onMessage as any).listeners.clear();
     vi.resetModules();
     // Load background to register message listeners
-    await import("../src/background");
+    await import("./background");
     await flush(5);
     // Set up default settings with API key so organize can run
-    const { saveSettings } = await import("../src/storage");
+    const { saveSettings } = await import("./storage");
     await saveSettings({
       ...DEFAULT_SETTINGS,
       provider: "openai",
@@ -48,7 +48,7 @@ describe("E2E Integration: Message dispatch → Background → Storage", () => {
   });
 
   it("stats increment after apply", async () => {
-    const { applyGroups } = await import("../src/background");
+    const { applyGroups } = await import("./background");
     await applyGroups([
       { name: "Dev", color: "blue", tabs: [{ id: 1, title: "GH", url: "https://github.com" }] },
       { name: "Docs", color: "green", tabs: [{ id: 2, title: "Docs", url: "https://docs.com" }] },
@@ -82,7 +82,7 @@ describe("E2E Integration: Message dispatch → Background → Storage", () => {
       ),
     );
 
-    const { organize } = await import("../src/background");
+    const { organize } = await import("./background");
     await organize();
 
     const res = await sendMsg({ type: "get-costs" });
@@ -117,7 +117,7 @@ describe("E2E Integration: Message dispatch → Background → Storage", () => {
     expect(applyRes.status).toBe("applied");
 
     // Check affinity was updated
-    const { getWeightedAffinity } = await import("../src/storage");
+    const { getWeightedAffinity } = await import("./storage");
     const affinity = await getWeightedAffinity();
     expect(Object.keys(affinity).length).toBeGreaterThan(0);
   });
@@ -200,14 +200,14 @@ describe("E2E Integration: Message dispatch → Background → Storage", () => {
 
     await sendMsg({ type: "save-workspace", name: "WithGroups" });
 
-    const { getWorkspaces } = await import("../src/storage");
+    const { getWorkspaces } = await import("./storage");
     const ws = await getWorkspaces();
     expect(ws["WithGroups"].tabs[0].groupName).toBe("Dev");
     expect(ws["WithGroups"].tabs[0].groupColor).toBe("blue");
   });
 
   it("restore-workspace opens tabs in new window", async () => {
-    const { saveWorkspace } = await import("../src/storage");
+    const { saveWorkspace } = await import("./storage");
     await saveWorkspace("restore-test", {
       name: "restore-test",
       savedAt: Date.now(),
@@ -247,7 +247,7 @@ describe("E2E Integration: Message dispatch → Background → Storage", () => {
   });
 
   it("delete-workspace removes workspace", async () => {
-    const { saveWorkspace } = await import("../src/storage");
+    const { saveWorkspace } = await import("./storage");
     await saveWorkspace("to-delete", { name: "to-delete", savedAt: 1, tabs: [] });
 
     const deleteRes = await sendMsg({ type: "delete-workspace", name: "to-delete" });
@@ -364,7 +364,7 @@ describe("E2E Integration: Message dispatch → Background → Storage", () => {
   // ─── Group drift ──────────────────────────────────────────────────────────
 
   it("check-group-drift returns not drifted when groups are coherent", async () => {
-    const { saveSettings } = await import("../src/storage");
+    const { saveSettings } = await import("./storage");
     await saveSettings({ ...DEFAULT_SETTINGS, groupDriftThreshold: 50 });
 
     vi.mocked(chrome.tabGroups.query).mockResolvedValue([
@@ -387,7 +387,7 @@ describe("E2E Integration: Message dispatch → Background → Storage", () => {
   });
 
   it("check-group-drift detects drifted group", async () => {
-    const { saveSettings } = await import("../src/storage");
+    const { saveSettings } = await import("./storage");
     await saveSettings({ ...DEFAULT_SETTINGS, groupDriftThreshold: 99 });
 
     vi.mocked(chrome.tabGroups.query).mockResolvedValue([
@@ -420,7 +420,7 @@ describe("E2E Integration: Message dispatch → Background → Storage", () => {
     const res = await sendMsg({ type: "record-corrections", corrections: corrEntry });
     expect(res.status).toBe("done");
 
-    const { getCorrections } = await import("../src/storage");
+    const { getCorrections } = await import("./storage");
     const corrections = await getCorrections();
     expect(corrections).toHaveLength(1);
     expect(corrections[0].corrections[0].domain).toBe("github.com");
@@ -437,7 +437,7 @@ describe("E2E Integration: Message dispatch → Background → Storage", () => {
       },
     });
 
-    const { getWeightedAffinity } = await import("../src/storage");
+    const { getWeightedAffinity } = await import("./storage");
     const affinity = await getWeightedAffinity();
     // Correction applies 3x weight to the corrected group
     expect(affinity["newdomain12345.com"]?.groups?.["CorrectedGroup"]?.count).toBe(3);
@@ -449,7 +449,7 @@ describe("E2E Integration: Message dispatch → Background → Storage", () => {
     const res = await sendMsg({ type: "record-rejections", rejections });
     expect(res.status).toBe("done");
 
-    const { getRejections } = await import("../src/storage");
+    const { getRejections } = await import("./storage");
     const saved = await getRejections();
     expect(saved).toHaveLength(1);
     expect(saved[0].domain).toBe("reddit.com");
@@ -465,7 +465,7 @@ describe("E2E Integration: Message dispatch → Background → Storage", () => {
   });
 
   it("import-data overwrites settings with validation", async () => {
-    const { DEFAULT_SETTINGS } = await import("../src/types");
+    const { DEFAULT_SETTINGS } = await import("./types");
     const importData = {
       settings: { ...DEFAULT_SETTINGS, maxGroups: 99 },
       affinity: {},
@@ -475,7 +475,7 @@ describe("E2E Integration: Message dispatch → Background → Storage", () => {
 
     await sendMsg({ type: "import-data", data: importData });
 
-    const { getSettings } = await import("../src/storage");
+    const { getSettings } = await import("./storage");
     const settings = await getSettings();
     expect(settings.maxGroups).toBe(30);
   });
