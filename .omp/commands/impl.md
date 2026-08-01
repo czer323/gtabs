@@ -18,6 +18,11 @@ Dispatch implementation work to pit-implementer.
 
 4. Report the agent's full output. Include implementation and review results.
 
+## Loop contract
+
+Default terminal state: merged — implementer pushes branch + opens PR, reviewer merges on approval.
+Orchestrator overrides only on explicit user instruction.
+
 ## Fallback
 
 - `$ARGUMENTS` empty → ask user
