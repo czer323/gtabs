@@ -5,7 +5,13 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { runChecks, type CheckResult } from "./check.ts";
 
-const STEPS = ["npm run test", "npm run format:check", "npm run lint", "npm run typecheck"];
+const STEPS = [
+  "npm run test",
+  "npm run format:check",
+  "npm run lint",
+  "npm run typecheck",
+  "npm run build",
+];
 const SCRIPT_PATH = join(import.meta.dirname, "check.ts");
 
 function harness(exec: (cmd: string) => void) {
@@ -83,7 +89,7 @@ describe("runChecks", () => {
     const result: CheckResult = runChecks({ exec: h.exec, out: h.out, err: h.err, verbose: true });
 
     expect(result.ok).toBe(true);
-    expect(h.exec).toHaveBeenCalledTimes(4);
+    expect(h.exec).toHaveBeenCalledTimes(5);
     for (const [, opts] of h.exec.mock.calls) {
       expect(opts).toMatchObject({ stdio: ["inherit", "inherit", "inherit"] });
     }
@@ -129,7 +135,7 @@ describe("runChecks", () => {
     const result: CheckResult = runChecks({ exec: h.exec, out: h.out, err: h.err });
 
     expect(result.ok).toBe(true);
-    expect(h.exec).toHaveBeenCalledTimes(4);
+    expect(h.exec).toHaveBeenCalledTimes(5);
   });
 });
 
@@ -172,6 +178,7 @@ describe("check CLI entry", () => {
     expect(res.stdout).toContain("fake-npm:format:check");
     expect(res.stdout).toContain("fake-npm:lint");
     expect(res.stdout).toContain("fake-npm:typecheck");
+    expect(res.stdout).toContain("fake-npm:build");
     expect(res.stdout).toContain("check: no issues\n");
   });
 
