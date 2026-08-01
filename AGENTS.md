@@ -28,7 +28,7 @@ gTabs is a Chrome extension for AI-powered tab organization.
 - **Types**: Keep shared types in `src/types.ts` where they are reused across bundles.
 - **UI**: Vanilla TypeScript with plain HTML pages (popup, options). No framework.
 - **Storage**: All persistence via `chrome.storage` — see `src/storage.ts`.
-- **Tests**: Named `*.test.ts` or `*.test.mjs`, co-located with the code they test — the `.test.` infix in the filename distinguishes them. Run against jsdom with `chrome.*` APIs mocked via `test/setup.ts`.
+- **Tests**: Named `*.test.ts` or `*.test.mjs`, co-located with the code they test — the `.test.` infix in the filename distinguishes them. Run against jsdom with `chrome.*` APIs mocked via `vitest.setup.ts`.
 
 ### Repo Hygiene
 
@@ -130,12 +130,12 @@ Hand-editing package.json produces lockfile inconsistencies that pass local chec
 
 NEVER import real `chrome.*` API bindings directly in test files — the extension's background/context APIs are not available in jsdom.
 
-Mock `chrome` entirely via `test/setup.ts`:
+Mock `chrome` entirely via `vitest.setup.ts`:
 
 ```ts
-// test/setup.ts already provides chrome mocks — extend there, not per-file
+// vitest.setup.ts already provides chrome mocks — extend there, not per-file
 globalThis.chrome = { storage: { local: { get: vi.fn(), set: vi.fn() } } /* ... */ };
 ```
 
-Use `resetAllMocks()` from `test/setup.ts` between tests — provides a clean mock state so tests don't leak storage or API state into each other.
+Use `resetAllMocks()` from `vitest.setup.ts` between tests — provides a clean mock state so tests don't leak storage or API state into each other.
 <!--END TEST Protocol-->

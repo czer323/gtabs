@@ -131,7 +131,7 @@ A maintainer reviews within a few days. Expect questions and requests for change
 
 ### Testing
 
-- **Framework:** Vitest with jsdom environment. Chrome APIs are mocked globally in `test/setup.ts`.
+- **Framework:** Vitest with jsdom environment. Chrome APIs are mocked globally in `vitest.setup.ts`.
 - **New functions** with non-trivial logic must have unit tests.
 - **New message handlers** should have an integration test that exercises the full dispatch path (see `integration.test.ts` for the pattern).
 - **No network calls in tests** — mock `fetch` and Chrome APIs. Full suite should complete in under 5 seconds.
