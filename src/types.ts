@@ -375,6 +375,34 @@ export const DEFAULT_COSTS: CostTotals = {
 
 // --- Messages ---
 
+export interface MessageResponse {
+  type: "status";
+  status: string;
+  suggestions?: GroupSuggestion[];
+  error?: string;
+  duplicates?: TabInfo[][];
+  stats?: Stats;
+  costs?: CostTotals;
+  data?: ExportData;
+  models?: string[];
+  available?: boolean;
+  chatResponse?: string;
+  markdown?: string;
+  workspaceNames?: string[];
+  count?: number;
+  drifted?: boolean;
+  driftedGroups?: string[];
+  mergeSplit?: MergeSplitResult;
+  tabResults?: Array<{
+    id: number;
+    title: string;
+    url: string;
+    groupName: string;
+    groupId: number;
+  }>;
+  groupStats?: Array<{ name: string; color: Color; tabCount: number; domains: string[] }>;
+}
+
 export type MessageType =
   | { type: "organize" }
   | { type: "organize-ungrouped" }
@@ -405,32 +433,7 @@ export type MessageType =
   | { type: "merge-split-suggestions" }
   | { type: "search-tabs"; query: string }
   | { type: "get-group-stats" }
-  | {
-      type: "status";
-      status: string;
-      suggestions?: GroupSuggestion[];
-      error?: string;
-      duplicates?: TabInfo[][];
-      stats?: Stats;
-      costs?: CostTotals;
-      data?: ExportData;
-      models?: string[];
-      chatResponse?: string;
-      markdown?: string;
-      workspaceNames?: string[];
-      count?: number;
-      drifted?: boolean;
-      driftedGroups?: string[];
-      mergeSplit?: MergeSplitResult;
-      tabResults?: Array<{
-        id: number;
-        title: string;
-        url: string;
-        groupName: string;
-        groupId: number;
-      }>;
-      groupStats?: Array<{ name: string; color: Color; tabCount: number; domains: string[] }>;
-    };
+  | MessageResponse;
 
 declare global {
   var LanguageModel:
