@@ -59,6 +59,8 @@ flowchart TD
         VERDICT -->|Changes requested| FIX[Fix each issue]
         FIX --> FIX_PUSH[Push commit]
         FIX_PUSH --> SPAWN
+        VERDICT -->|Deferred| REPORT[Report DEPENDENCY card to dispatcher]
+        REPORT --> Deliver
     end
 
     Deliver[Deliver] --> YIELD[Yield: implementation + review verdict]
@@ -84,6 +86,7 @@ Check each during review gate loop:
 ## Rules
 
 - You NEVER merge. Only the reviewer merges.
+- On reviewer verdict `deferred`: do NOT fix, do NOT merge — report the verdict and `DEPENDENCY: #N` to the dispatcher, then yield.
 - You NEVER touch files outside task scope.
 - You NEVER add features not in spec.
 - If blocked: state what you tried and what you need. No workarounds.

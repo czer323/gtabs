@@ -10,7 +10,7 @@ output:
     overall_correctness:
       metadata:
         description: Whether change correct (no bugs/blockers)
-      enum: [correct, incorrect]
+      enum: [correct, incorrect, deferred]
     explanation:
       metadata:
         description: Plain-text verdict summary, 1-3 sentences
@@ -77,6 +77,9 @@ flowchart TD
     Merge --> YieldApproved[Yield: correct + merged]
     YieldApproved --> Done(["Done"])
 
+    Decision -->|Deferral| Defer[Create card + comment Blocked on #N + yield deferred]
+    Defer --> Done(["Done"])
+
     Decision -->|Yes| YieldFindings[Yield: findings for implementer]
     YieldFindings --> Wait(["Implementer: Address Concerns & resubmit to Reviewer"])
     Wait --> Fetch
@@ -90,14 +93,28 @@ flowchart TD
 5. Post findings as a comment on the PR via github tool
 6. Record each issue with incremental `yield` using `type: ["findings"]`
 7. Record `overall_correctness`, `explanation`, and `confidence` with incremental `yield` sections
-8. If no blocking findings (P0/P1):
+8. If no blocking findings (P0/P1) and no deferral:
    a. `git fetch origin main` — check if branch is behind
    b. If behind: `git rebase origin/main`, force-push, wait for CI
    c. Wait for CI to pass: `gh pr checks --watch`
    d. Merge: `gh pr merge --squash --delete-branch`
 9. If blocking findings: stop and let idle finalization assemble the result for the implementer
+10. If deferral required: follow the Deferral section below; do NOT merge.
 
-Bash is read-only: `git diff`, `git log`, `git show`, `gh pr diff`, `gh pr checks`. The only write actions are `gh pr comment` (post findings) and `gh pr merge`.
+Bash is read-only: `git diff`, `git log`, `git show`, `gh pr diff`, `gh pr checks`. The only write actions are `gh pr comment` (post findings), `gh issue create` (deferral cards), and `gh pr merge`.
+
+## Deferral (new unit of work required)
+
+If the patch is correct but a NEW unit of work must land before this merge is safe
+(including pre-existing issues this patch depends on), do NOT merge:
+
+1. Create the card: `gh issue create` with a complete spec (problem, scope, acceptance).
+2. Comment on the PR: `Blocked on #N — do not merge until #N lands.`
+3. Yield `overall_correctness: "deferred"` and put `DEPENDENCY: #N` first in the explanation.
+4. The implementer relays the verdict + card to the dispatcher, who sequences the
+   dependency before this PR is re-reviewed.
+
+Deferred ≠ incorrect: the patch may be sound. It means don't merge yet — a dependency must land first.
 </procedure>
 
 <criteria>
@@ -160,7 +177,7 @@ Each finding uses incremental `yield` with `type: ["findings"]` and `result.data
 
 Verdict fields also use incremental `yield` sections:
 
-- `type: ["overall_correctness"]` with `"correct"` (no bugs/blockers) or `"incorrect"`
+- `type: ["overall_correctness"]` with `"correct"` (no bugs/blockers), `"incorrect"`, or `"deferred"` (new unit of work must land first; see Deferral)
 - `type: ["explanation"]` with a plain-text 1-3 sentence verdict summary
 - `type: ["confidence"]` with a 0.0-1.0 confidence value
 
