@@ -8,4 +8,5 @@ export function runChecks(options?: {
   exec?: (command: string, options?: object) => unknown;
   out?: { write: (chunk: string) => void };
   err?: { write: (chunk: string) => void };
+  verbose?: boolean;
 }): CheckResult;

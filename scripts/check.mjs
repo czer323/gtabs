@@ -8,14 +8,19 @@ export function runChecks({
   exec = execSync,
   out = process.stdout,
   err = process.stderr,
+  verbose = false,
 } = {}) {
+  const stdio = verbose ? ["inherit", "inherit", "inherit"] : ["inherit", "pipe", "pipe"];
   for (const step of steps) {
     try {
-      exec(`npm run ${step}`, { stdio: ["inherit", "pipe", "pipe"], encoding: "utf8" });
+      exec(`npm run ${step}`, { stdio, encoding: "utf8" });
     } catch (e) {
-      const detail = [e.stdout, e.stderr].filter(Boolean).join("");
       err.write(`check failed: ${step}\n`);
-      if (detail) err.write(`${detail.replace(/\n$/, "")}\n`);
+      // In verbose mode the step output already streamed through; never re-echo it.
+      if (!verbose) {
+        const detail = [e.stdout, e.stderr].filter(Boolean).join("");
+        if (detail) err.write(`${detail.replace(/\n$/, "")}\n`);
+      }
       return { ok: false, failedStep: step };
     }
   }
@@ -24,5 +29,6 @@ export function runChecks({
 }
 
 if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) {
-  process.exit(runChecks().ok ? 0 : 1);
+  const verbose = process.argv.slice(2).includes("show");
+  process.exit(runChecks({ verbose }).ok ? 0 : 1);
 }
