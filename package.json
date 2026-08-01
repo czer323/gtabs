@@ -17,7 +17,7 @@
     "fix": "npm run format && npm run lint -- --fix && npm run check"
   },
   "devDependencies": {
-    "@types/chrome": "^0.1.38",
+    "@types/chrome": "^0.2.5",
     "@vitest/coverage-v8": "^2.1.0",
     "esbuild": "^0.24.0",
     "jsdom": "^29.0.1",
