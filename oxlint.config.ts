@@ -16,7 +16,7 @@ export default defineConfig({
   },
   overrides: [
     {
-      files: ["*.test.ts", "*.spec.ts"],
+      files: ["**/*.test.*", "**/*.spec.*"],
       plugins: ["vitest"],
       rules: {
         "vitest/no-focused-tests": "error",
