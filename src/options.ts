@@ -1,4 +1,4 @@
-import type { Settings, DomainRule, Color, ProviderPreset, MessageResponse, WorkspaceMap } from "./types";
+import type { Settings, DomainRule, Color, ProviderPreset, MessageResponse } from "./types";
 import { DEFAULT_SETTINGS, PROVIDERS, COLORS } from "./types";
 import { getSettings, saveSettings, getDomainRules, saveDomainRules } from "./storage";
 

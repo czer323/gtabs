@@ -1,4 +1,10 @@
-import type { Color, GroupSuggestion, CorrectionEntry, RejectionEntry, MessageResponse } from "./types";
+import type {
+  Color,
+  GroupSuggestion,
+  CorrectionEntry,
+  RejectionEntry,
+  MessageResponse,
+} from "./types";
 import { COLORS } from "./types";
 import { getSuggestions, getSettings, saveSettings } from "./storage";
 
