@@ -69,11 +69,10 @@ flowchart TD
 
 ## Verification gates
 
-Check all before spawning reviewer:
+Run `npm run check` once at the end — it covers test, format, lint, typecheck, and build.
+Push the branch before spawning the reviewer.
 
-- [ ] Full test suite passes (`npm test`)
-- [ ] Build, types, lint pass (`npm run check`)
-- [ ] Branch pushed to remote
+Spawn the reviewer with: "Review PR #N against the card." Merge verification happens in CI and the reviewer role doc.
 
 ## Review criteria
 

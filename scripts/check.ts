@@ -1,7 +1,7 @@
 import { execSync } from "node:child_process";
 import { pathToFileURL } from "node:url";
 
-const STEPS = ["test", "format:check", "lint", "typecheck"] as const;
+const STEPS = ["test", "format:check", "lint", "typecheck", "build"] as const;
 
 type ExecFn = (command: string, options?: object) => unknown;
 type Stream = { write: (chunk: string) => void };
