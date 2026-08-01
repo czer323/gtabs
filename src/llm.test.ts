@@ -24,7 +24,10 @@ function mockOk(content: string) {
   );
 }
 
-beforeEach(() => vi.mocked(fetch).mockReset());
+beforeEach(() => {
+  vi.unstubAllGlobals();
+  vi.mocked(fetch).mockReset();
+});
 
 describe("complete - request format", () => {
   it("sends correct OpenAI-compatible request shape", async () => {
@@ -152,9 +155,12 @@ describe("complete - response handling", () => {
 
 describe("complete - error handling", () => {
   it("throws on network error", async () => {
-    (globalThis as any).fetch = vi.fn<typeof fetch>(async () => {
-      throw new Error("Network error");
-    });
+    vi.stubGlobal(
+      "fetch",
+      vi.fn<typeof fetch>(async () => {
+        throw new Error("Network error");
+      }),
+    );
     let caught: Error | null = null;
     try {
       await complete(cfg, [{ role: "user", content: "hi" }]);
@@ -336,9 +342,12 @@ describe("complete - Anthropic API", () => {
   });
 
   it("throws on Anthropic network failure", async () => {
-    (globalThis as any).fetch = vi.fn<typeof fetch>(async () => {
-      throw new Error("Failed to fetch");
-    });
+    vi.stubGlobal(
+      "fetch",
+      vi.fn<typeof fetch>(async () => {
+        throw new Error("Failed to fetch");
+      }),
+    );
     await expect(complete(anthropicCfg, [{ role: "user", content: "hi" }])).rejects.toThrow(
       "Failed to fetch",
     );
@@ -384,9 +393,12 @@ describe("fetchOllamaModels", () => {
   });
 
   it("throws on network error", async () => {
-    (globalThis as any).fetch = vi.fn<typeof fetch>(async () => {
-      throw new Error("connection refused");
-    });
+    vi.stubGlobal(
+      "fetch",
+      vi.fn<typeof fetch>(async () => {
+        throw new Error("connection refused");
+      }),
+    );
     await expect(fetchOllamaModels("http://localhost:11434")).rejects.toThrow("connection refused");
   });
 });
@@ -402,9 +414,8 @@ describe("testConnection", () => {
 describe("Chrome AI", () => {
   it("identifies if Chrome AI is available", () => {
     expect(isChromeAIAvailable()).toBeFalsy();
-    (globalThis as any).LanguageModel = {};
+    vi.stubGlobal("LanguageModel", {});
     expect(isChromeAIAvailable()).toBe(true);
-    delete (globalThis as any).LanguageModel;
   });
 
   it("throws error if completeChromeAI called but missing", async () => {
@@ -422,7 +433,7 @@ describe("Chrome AI", () => {
     const mockCreate = vi
       .fn<(options: { systemPrompt?: string }) => Promise<typeof mockSession>>()
       .mockResolvedValue(mockSession);
-    (globalThis as any).LanguageModel = { create: mockCreate };
+    vi.stubGlobal("LanguageModel", { create: mockCreate });
 
     const config: LLMConfig = { model: "gemini-nano", baseUrl: "", apiKey: "" };
     const res = await completeWithUsage(config, [
@@ -435,7 +446,6 @@ describe("Chrome AI", () => {
     expect(mockSession.destroy).toHaveBeenCalled();
     expect(res.content).toBe("chrome ai response");
     expect(res.inputTokens).toBeGreaterThan(0);
-    delete (globalThis as any).LanguageModel;
   });
 
   it("calls LanguageModel.create without system prompt", async () => {
@@ -446,12 +456,11 @@ describe("Chrome AI", () => {
     const mockCreate = vi
       .fn<(options: { systemPrompt?: string }) => Promise<typeof mockSession>>()
       .mockResolvedValue(mockSession);
-    (globalThis as any).LanguageModel = { create: mockCreate };
+    vi.stubGlobal("LanguageModel", { create: mockCreate });
 
     const config: LLMConfig = { model: "gemini-nano", baseUrl: "", apiKey: "" };
     await completeWithUsage(config, [{ role: "user", content: "hello" }]);
 
     expect(mockCreate).toHaveBeenCalledWith({});
-    delete (globalThis as any).LanguageModel;
   });
 });
