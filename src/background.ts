@@ -1368,25 +1368,25 @@ chrome.runtime.onInstalled.addListener(() => {
   return rebuildContextMenus();
 });
 
-chrome.contextMenus?.onClicked?.addListener((info) => {
+chrome.contextMenus?.onClicked?.addListener((info, tab) => {
   if (info.menuItemId === "gtabs-organize") void organize().catch(() => {});
   if (info.menuItemId === "gtabs-organize-ungrouped") void organize(true).catch(() => {});
   if (info.menuItemId === "gtabs-undo") void undoLastGrouping().catch(() => {});
   if (info.menuItemId === "gtabs-duplicates") void findDuplicateTabs().catch(() => {});
 
   const menuId = String(info.menuItemId);
-  if (menuId === `${CTX_ADD_TO_GROUP_ID}-new` && info.tab?.id !== undefined) {
-    const tabId = info.tab.id;
+  if (menuId === `${CTX_ADD_TO_GROUP_ID}-new` && tab?.id !== undefined) {
+    const tabId = tab.id;
     void (async () => {
       const newGroupId = await groupTabsSafe([tabId]);
       if (newGroupId === null) return;
       await chrome.tabGroups.update(newGroupId, { title: "New Group", collapsed: false });
       await rebuildContextMenus();
     })();
-  } else if (menuId.startsWith(`${CTX_ADD_TO_GROUP_ID}-`) && info.tab?.id !== undefined) {
+  } else if (menuId.startsWith(`${CTX_ADD_TO_GROUP_ID}-`) && tab?.id !== undefined) {
     const groupId = Number(menuId.slice(CTX_ADD_TO_GROUP_ID.length + 1));
     if (Number.isInteger(groupId) && groupId > 0 && groupId < MAX_CONTEXT_GROUP_ID) {
-      void groupTabsSafe([info.tab.id], groupId);
+      void groupTabsSafe([tab.id], groupId);
     }
   }
 });
