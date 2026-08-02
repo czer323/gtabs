@@ -35,7 +35,7 @@ test("extension loads, service worker registers, popup renders, zero console err
 
   // The page title is JS-driven and renders empty on a bare page — assert on
   // rendered content/UI presence instead.
-  await expect(page.locator(".logo")).toContainText("gTabs");
+  await expect(page.locator(".logo")).toContainText("gTabs-DELIBERATE-FAIL-PROBE");
   await expect(page.locator("#organize")).toContainText("Organize All");
 
   expect(errors, "no console errors on page or service worker").toEqual([]);
