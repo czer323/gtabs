@@ -6,6 +6,7 @@
   "scripts": {
     "build": "node scripts/build.ts",
     "package": "rm -f gtabs-extension.zip && cd dist && (xattr -cr . 2>/dev/null || true) && zip -rX ../gtabs-extension.zip . -x '*.map' && cd .. && echo 'Packaged → gtabs-extension.zip'",
+    "playwright-cli": "playwright-cli",
     "test": "vitest run --reporter=dot",
     "test:e2e": "npm run build && playwright test",
     "test:watch": "vitest",
@@ -15,7 +16,6 @@
     "format:check": "oxfmt --check",
     "typecheck": "tsc --noEmit",
     "check": "node scripts/check.ts",
-    "cli": "playwright-cli",
     "fix": "npm run lint -- --fix && npm run format && npm run check"
   },
   "devDependencies": {
