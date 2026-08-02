@@ -25,6 +25,16 @@ export default defineConfig({
       },
     },
     {
+      // Org decision (issue #51, Path B): the no-unsafe-type-assertion warnings
+      // in test files are intentional mock-boundary casts at the test-double
+      // boundary. They are declared NOT VALUABLE; the rule's value lives in
+      // production code, so test files are exempted instead of churned.
+      files: ["**/*.test.*", "**/*.spec.*", "vitest.setup.ts"],
+      rules: {
+        "typescript/no-unsafe-type-assertion": "off",
+      },
+    },
+    {
       // Extension code runs in Chrome's MV3 runtime (service worker / pages) —
       // no Node globals exist there. Tripwire: usage fails lint so agents and
       // humans get steered away before esbuild catches it at bundle time.
