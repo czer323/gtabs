@@ -6,7 +6,7 @@ This is the human+agent guide: every command is a plain terminal command a human
 
 ## What this is
 
-The CLI **hosts the browser itself** from a committed config file (`.playwright/cli.config.json`) — no external launcher, no `attach --cdp`. `playwright-cli open` starts a persistent Chrome session that has the gTabs extension loaded, and every subsequent `playwright-cli` command drives that same session. The workflow below was executed and verified on 2026-08-02 against Chrome 151 (Playwright cache) on the TrueNAS Linux host (no display).
+The CLI **hosts the browser itself** from a committed config file (`.playwright/cli.config.json`) — no external launcher, no `attach --cdp`. `npm run playwright-cli -- open` starts a persistent Chrome session that has the gTabs extension loaded, and every subsequent `npm run playwright-cli --` command drives that same session. The workflow below was executed and verified on 2026-08-02 against Chrome 151 (Playwright cache) on the TrueNAS Linux host (no display).
 
 ## 0. Setup
 
@@ -16,8 +16,10 @@ npm run build
 
 # (fresh clone only) the CLI bundles its own playwright-core, which wants its own
 # chromium revision. Reuse the browser already installed by @playwright/test, or:
-npx playwright-cli install-browser chromium
+npm run playwright-cli -- install-browser chromium
 ```
+
+**Why `npm run playwright-cli`?** `npm run playwright-cli` invokes the pinned `@playwright/cli@0.1.17` from `node_modules` via the `playwright-cli` npm script. Don't use `npx`: with `node_modules` installed it resolves the same local bin, but when it is missing, npx silently fetches the **latest** `@playwright/cli` from the registry — unpinned, and possibly incompatible with the committed `.playwright/cli.config.json` schema.
 
 The committed `.playwright/cli.config.json` lets the CLI launch **its own** browser (no external launcher) with gTabs loaded:
 
@@ -41,13 +43,13 @@ Key fields, each chosen for the validated recipe (spike #67/#73):
 - `channel: "chromium"` — the full Chrome for Testing browser; the headless shell cannot load extensions.
 - `headless: true` — host has no display.
 - `--no-sandbox` — host requirement.
-- Args use the **relative** `dist` path, which Chromium resolves against the process working directory. This is what makes the committed config **portable**: any clone works identically **as long as `playwright-cli` runs from the repo root** (the normal `npx`/npm invocation) and `dist/` has been built. `--config` or a relative `--load-extension` from a different cwd will **not** find the extension.
+- Args use the **relative** `dist` path, which Chromium resolves against the process working directory. This is what makes the committed config **portable**: any clone works identically **as long as `npm run playwright-cli` runs from the repo root** (the normal npm-script invocation) and `dist/` has been built. `--config` or a relative `--load-extension` from a different cwd will **not** find the extension.
 
 Run the CLI from the repo root:
 
 ```bash
 # starts the persistent, gTabs-loaded browser, e.g. seeded to a page
-npx playwright-cli open "https://example.com"
+npm run playwright-cli -- open "https://example.com"
 ```
 
 (The config auto-loads from `.playwright/cli.config.json` relative to cwd — another reason to run from the repo root.)
@@ -57,7 +59,7 @@ npx playwright-cli open "https://example.com"
 The SW is **not** in `tab-list` (page targets only). Use the documented `run-code` escape hatch with the standard Playwright API — `page.context().serviceWorkers()`:
 
 ```bash
-npx playwright-cli run-code "async page => {
+npm run playwright-cli -- run-code "async page => {
   const sw = page.context().serviceWorkers()[0];
   return await sw.evaluate(() => chrome.tabs.query({}).then(ts => ts.map(t => t.url)));
 }"
@@ -73,11 +75,11 @@ The popup is an extension page; open it as a normal tab with `tab-new`:
 ```bash
 # extension id comes from the SW URL: new URL(sw.url()).host
 # (deterministic per resolved dist path; never hardcode it — derive at runtime)
-npx playwright-cli tab-new "chrome-extension://<id>/popup.html"
+npm run playwright-cli -- tab-new "chrome-extension://<id>/popup.html"
 
-npx playwright-cli snapshot      # YAML a11y tree with element refs, e.g. button "Organize All" [ref=e7]
-npx playwright-cli click e7      # click by ref
-npx playwright-cli snapshot      # re-snapshot; state changes visible
+npm run playwright-cli -- snapshot      # YAML a11y tree with element refs, e.g. button "Organize All" [ref=e7]
+npm run playwright-cli -- click e7      # click by ref
+npm run playwright-cli -- snapshot      # re-snapshot; state changes visible
 ```
 
 Snapshots are written to `.playwright-cli/*.yml` (gitignored); stdout prints a summary + the file link, so the agent reads only what it needs. Refs (`e7`) are **per-snapshot** — after any DOM change, take a fresh snapshot before clicking.
@@ -85,16 +87,16 @@ Snapshots are written to `.playwright-cli/*.yml` (gitignored); stdout prints a s
 ## 3. Drive tabs
 
 ```bash
-npx playwright-cli tab-list                    # indexed list
-npx playwright-cli tab-new "https://example.org"
-npx playwright-cli tab-select 0                # switch by index
-npx playwright-cli tab-close 4                 # close by index
+npm run playwright-cli -- tab-list                    # indexed list
+npm run playwright-cli -- tab-new "https://example.org"
+npm run playwright-cli -- tab-select 0                # switch by index
+npm run playwright-cli -- tab-close 4                 # close by index
 ```
 
 **Grouping** has no native command — use the SW route (chrome.tabs is extension-only):
 
 ```bash
-npx playwright-cli run-code "async page => {
+npm run playwright-cli -- run-code "async page => {
   const sw = page.context().serviceWorkers()[0];
   return await sw.evaluate(async () => {
     const tabs = await chrome.tabs.query({});
@@ -108,18 +110,18 @@ npx playwright-cli run-code "async page => {
 **Query** chrome.tabs from the popup page (extension pages expose chrome.tabs) with plain `eval`:
 
 ```bash
-npx playwright-cli eval "async () => { const tabs = await chrome.tabs.query({}); return JSON.stringify(tabs.length); }"
+npm run playwright-cli -- eval "async () => { const tabs = await chrome.tabs.query({}); return JSON.stringify(tabs.length); }"
 ```
 
 ## 4. Console + network
 
 ```bash
-npx playwright-cli console                  # page console, all since load; `console 1` for >=warn
-npx playwright-cli requests --static       # note: --static to include document requests
-npx playwright-cli request 1               # headers/status/duration of request #1
+npm run playwright-cli -- console                  # page console, all since load; `console 1` for >=warn
+npm run playwright-cli -- requests --static       # note: --static to include document requests
+npm run playwright-cli -- request 1               # headers/status/duration of request #1
 
 # SW console (on-demand capture): attach a worker console listener inside run-code
-npx playwright-cli run-code "async page => {
+npm run playwright-cli -- run-code "async page => {
   const sw = page.context().serviceWorkers()[0];
   const msgs = [];
   sw.on('console', m => msgs.push('[' + m.type() + '] ' + m.text()));
@@ -135,19 +137,19 @@ Caveat (verified): SW **network** request events do not fire through the CLI —
 
 ```bash
 # missed selector / stale ref
-npx playwright-cli click e99
+npm run playwright-cli -- click e99
 # → Error: Ref e99 not found in the current page snapshot. Try capturing a new snapshot.
-npx playwright-cli snapshot   # fresh refs → retry. Session intact.
+npm run playwright-cli -- snapshot   # fresh refs → retry. Session intact.
 
 # suspended SW: nothing to do — the next run-code re-fetches the worker.
-# session control: close-all / kill-all / detach; PLAYWRIGHT_CLI_SESSION=name to pick one.
+# session control: npm run playwright-cli -- close-all / kill-all / detach; PLAYWRIGHT_CLI_SESSION=name to pick one.
 ```
 
 ## Human-loop notes
 
-- Everything above is typed in a terminal by a human — no MCP client, no external launcher. `npx playwright-cli --help` is grouped and complete; `npx playwright-cli <cmd> --help` gives per-command details.
-- Agents: `playwright-cli install --skills` installs the bundled skill, or just point the agent at `playwright-cli --help` and let it discover.
-- Session management: `playwright-cli list`, `close-all`, `kill-all`.
+- Everything above is typed in a terminal by a human — no MCP client, no external launcher. `npm run playwright-cli -- --help` is grouped and complete; `npm run playwright-cli -- <cmd> --help` gives per-command details.
+- Agents: `npm run playwright-cli -- install --skills` installs the bundled skill, or just point the agent at `npm run playwright-cli -- --help` and let it discover.
+- Session management: `npm run playwright-cli -- list` / `close-all` / `kill-all`.
 
 ## Non-standard things in this guide, and why
 
