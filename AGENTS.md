@@ -22,6 +22,7 @@ gTabs is a Chrome extension for AI-powered tab organization.
 `npm run lint` - lint with token-saving output - Does not auto-fix
 `npm run format` - format files in place
 `npm run dev` - watch mode rebuild
+`gh stack --help` - Stacked PRs let you break a large change into a chain of pull requests that build on each other.
 
 ## Contributing & Conventions
 
