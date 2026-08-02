@@ -9,6 +9,8 @@ unnamed.png
 .DS_Store
 .claude/
 reports/
+test-results/
+playwright-report/
 store-assets/demo-scenes/
 store-assets/screenshot-*
 store-assets/shot*
