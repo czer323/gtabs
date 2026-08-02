@@ -149,8 +149,9 @@ async function getExistingTabIds(tabIds: number[]): Promise<number[]> {
 
 async function ungroupTabsSafe(tabIds: number[]): Promise<void> {
   const existing = await getExistingTabIds(tabIds);
-  if (existing.length > 0) {
-    await chrome.tabs.ungroup(existing as [number, ...number[]]);
+  const [first, ...rest] = existing;
+  if (first !== undefined) {
+    await chrome.tabs.ungroup([first, ...rest]);
   }
 }
 
@@ -160,14 +161,15 @@ async function groupTabsSafe(
   windowId?: number,
 ): Promise<number | null> {
   const existing = await getExistingTabIds(tabIds);
-  if (existing.length === 0) return null;
+  const [first, ...rest] = existing;
+  if (first === undefined) return null;
   if (groupId !== undefined) {
-    await chrome.tabs.group({ tabIds: existing as [number, ...number[]], groupId });
+    await chrome.tabs.group({ tabIds: [first, ...rest], groupId });
     return groupId;
   }
   const createProperties = windowId !== undefined ? { windowId } : undefined;
   return await chrome.tabs.group({
-    tabIds: existing as [number, ...number[]],
+    tabIds: [first, ...rest],
     createProperties,
   });
 }
@@ -491,7 +493,7 @@ export async function organize(
       const colorPrefs = await getGroupColorPrefs();
       preMatched = Array.from(matched.entries()).map(([name, matchedTabs]) => ({
         name,
-        color: (colorPrefs[name] ?? "grey") as Color,
+        color: colorPrefs[name] ?? "grey",
         tabs: matchedTabs,
       }));
       tabsForLLM = remaining;

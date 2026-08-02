@@ -26,11 +26,13 @@ export function runChecks({
     try {
       exec(`npm run ${step}`, { stdio, encoding: "utf8" });
     } catch (e) {
-      const failed = e as { stdout?: string; stderr?: string };
       err.write(`check failed: ${step}\n`);
       // In verbose mode the step output already streamed through; never re-echo it.
       if (!verbose) {
-        const detail = [failed.stdout, failed.stderr].filter(Boolean).join("");
+        const isErr = typeof e === "object" && e !== null;
+        const stdout = isErr && "stdout" in e ? String(e.stdout) : "";
+        const stderr = isErr && "stderr" in e ? String(e.stderr) : "";
+        const detail = [stdout, stderr].filter(Boolean).join("");
         if (detail) err.write(`${detail.replace(/\n$/, "")}\n`);
       }
       return { ok: false, failedStep: step };
