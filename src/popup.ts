@@ -8,8 +8,14 @@ import type {
 import { COLORS } from "./types";
 import { getSuggestions, getSettings, saveSettings } from "./storage";
 
-// oxlint-disable-next-line typescript/no-unnecessary-type-parameters -- T enables typed call sites like $<HTMLButtonElement>("organize") (11 usages)
+// oxlint-disable-next-line typescript/no-unnecessary-type-parameters, typescript/no-unsafe-type-assertion -- T enables typed call sites like $<HTMLButtonElement>("organize") (11 usages); getElementById lacks a generic, so this cast is the sanctioned DOM-boundary exemption
 const $ = <T extends HTMLElement>(id: string): T => document.getElementById(id) as T;
+
+const COLOR_VALUES: readonly string[] = COLORS;
+
+function isColor(v: string | undefined): v is Color {
+  return v !== undefined && COLOR_VALUES.includes(v);
+}
 
 const btnOrganize = $<HTMLButtonElement>("organize");
 const btnOrganizeUngrouped = $<HTMLButtonElement>("organize-ungrouped");
@@ -124,7 +130,8 @@ function renderSuggestions(suggestions: GroupSuggestion[]) {
 
   container.querySelectorAll<HTMLSelectElement>(".group-color").forEach((el) =>
     el.addEventListener("change", () => {
-      currentSuggestions[Number(el.dataset.i)].color = el.value as Color;
+      const value = el.value;
+      currentSuggestions[Number(el.dataset.i)].color = isColor(value) ? value : "grey";
     }),
   );
 
@@ -214,12 +221,12 @@ searchInput.addEventListener("input", () => {
 
   if (currentSuggestions.length > 0) {
     tabSearchResults.innerHTML = "";
-    container.querySelectorAll(".tab-list li").forEach((li) => {
+    container.querySelectorAll<HTMLElement>(".tab-list li").forEach((li) => {
       const match =
         !q ||
         (li.textContent ?? "").toLowerCase().includes(q) ||
         (li.getAttribute("title") ?? "").toLowerCase().includes(q);
-      (li as HTMLElement).style.display = match ? "" : "none";
+      li.style.display = match ? "" : "none";
       li.className = q && match ? "search-match" : "";
     });
     container.querySelectorAll<HTMLDivElement>(".card").forEach((card) => {
@@ -270,7 +277,8 @@ document.addEventListener("keydown", (e) => {
       c.style.opacity = "1";
     });
     setFocusedCard(-1);
-    (document.activeElement as HTMLElement)?.blur?.();
+    const active = document.activeElement;
+    if (active instanceof HTMLElement) active.blur();
     return;
   }
 
