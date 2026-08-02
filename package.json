@@ -15,6 +15,7 @@
     "format:check": "oxfmt --check",
     "typecheck": "tsc --noEmit",
     "check": "node scripts/check.ts",
+    "cli": "playwright-cli",
     "fix": "npm run lint -- --fix && npm run format && npm run check"
   },
   "devDependencies": {
