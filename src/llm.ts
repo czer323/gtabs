@@ -174,8 +174,13 @@ export async function fetchOllamaModels(baseUrl: string): Promise<string[]> {
   const base = baseUrl.replace(/\/v1\/?$/, "");
   const res = await fetchWithTimeout(`${base}/api/tags`, { method: "GET" }, 5000);
   if (!res.ok) throw new Error("Could not connect to Ollama");
-  const data = await res.json();
-  return (data.models || []).map((m: any) => m.name || m.model).filter(Boolean) as string[];
+  const data: { models?: Array<{ name?: unknown; model?: unknown }> } = await res.json();
+  const models: string[] = [];
+  for (const m of data.models ?? []) {
+    const candidate = m.name || m.model;
+    if (typeof candidate === "string" && candidate) models.push(candidate);
+  }
+  return models;
 }
 
 export async function testConnection(config: LLMConfig): Promise<string> {

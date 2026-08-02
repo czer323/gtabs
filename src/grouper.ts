@@ -298,9 +298,8 @@ function extractJSON(raw: string): string {
 
 function validateGroup(g: unknown): g is RawGroup {
   if (typeof g !== "object" || g === null) return false;
-  const obj = g as Record<string, unknown>;
-  if (!Array.isArray(obj.tabIds)) return false;
-  return true;
+  if (!("tabIds" in g)) return false;
+  return Array.isArray(g.tabIds);
 }
 
 export function parseResponse(raw: string, tabs: TabInfo[]): GroupSuggestion[] {
