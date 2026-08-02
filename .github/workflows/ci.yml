@@ -33,3 +33,12 @@ jobs:
 
       - name: format:check
         run: npm run format:check
+
+      # E2E is an explicit CI gate (issue #72), deliberately separate from
+      # `npm run check` / the unit gate. playwright.config.ts launches with
+      # channel: "chromium" (Chromium new-headless), which `playwright install
+      # chromium` provides; --with-deps installs the runner's system libraries.
+      # --no-sandbox is already set in the config's launchOptions. The e2e
+      # script itself runs `npm run build` first, so dist/ is always fresh.
+      - name: e2e (smoke)
+        run: npx playwright install --with-deps chromium && npm run test:e2e
