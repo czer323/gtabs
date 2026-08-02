@@ -11,6 +11,7 @@ unnamed.png
 reports/
 test-results/
 playwright-report/
+.playwright-cli/
 store-assets/demo-scenes/
 store-assets/screenshot-*
 store-assets/shot*
