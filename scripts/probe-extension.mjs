@@ -4,8 +4,14 @@
  * extension (dist/) and reach its service worker?
  *
  * Usage:
- *   node scripts/probe-extension.mjs            # headless
- *   node scripts/probe-extension.mjs headed     # headed (run under xvfb-run)
+ *   node scripts/probe-extension.mjs newheadless   # headless (channel:'chromium' — the PASSING path)
+ *   node scripts/probe-extension.mjs               # headless-shell (no ext support — docs the negative)
+ *   node scripts/probe-extension.mjs headed        # headed (run under xvfb-run)
+ *
+ * NOTE: with no arg, headless:true defaults to chrome-headless-shell, which does
+ * not load extensions (0 service workers) — run it to reproduce the FAIL. The
+ * PASSING headless mode is `newheadless`, which sets channel:'chromium' (new-
+ * headless, full build).
  *
  * Discovery probe only — no merge, no extension behavior testing.
  */
