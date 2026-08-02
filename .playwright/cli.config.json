@@ -1,0 +1,11 @@
+{
+  "browser": {
+    "browserName": "chromium",
+    "isolated": false,
+    "launchOptions": {
+      "channel": "chromium",
+      "headless": true,
+      "args": ["--disable-extensions-except=dist", "--load-extension=dist", "--no-sandbox"]
+    }
+  }
+}
