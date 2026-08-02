@@ -116,12 +116,20 @@ function sanitizeSettings(input: Partial<Settings>): Settings {
 
 // --- Settings (sync, except API key which is local-only for security) ---
 
+// readStored centralizes the storage boundary: chrome.storage.get returns unknown values,
+// and each caller asserts the shape it stored. The cast lives in exactly one place.
+// oxlint-disable-next-line typescript/no-unnecessary-type-parameters -- T is the caller-declared stored shape
+function readStored<T>(data: Record<string, unknown>, key: string): T {
+  // oxlint-disable-next-line typescript/no-unsafe-type-assertion -- sanctioned storage-boundary cast (issue #51)
+  return data[key] as T;
+}
+
 export async function getSettings(): Promise<Settings> {
   const [syncData, localData] = await Promise.all([
     chrome.storage.sync.get({ [K.settings]: DEFAULT_SETTINGS }),
     chrome.storage.local.get({ [K_API_KEY_LOCAL]: null }),
   ]);
-  const syncSettings = sanitizeSettings(syncData[K.settings] as Partial<Settings>);
+  const syncSettings = sanitizeSettings(readStored<Partial<Settings>>(syncData, K.settings));
   const base: Settings = { ...syncSettings };
   // Prefer local API key (not synced across devices); fall back to sync (pre-migration)
   const localKey = localData[K_API_KEY_LOCAL];
@@ -174,10 +182,10 @@ export function computeDecayedWeight(count: number, lastUsed: number, now = Date
 
 async function migrateAffinity(): Promise<void> {
   const versionData = await chrome.storage.local.get({ [K.affinityVersion]: 0 });
-  if ((versionData[K.affinityVersion] as number) >= 2) return;
+  if (readStored<number>(versionData, K.affinityVersion) >= 2) return;
 
   const oldData = await chrome.storage.local.get({ [K.affinity]: {} });
-  const oldAffinity = oldData[K.affinity] as AffinityMap;
+  const oldAffinity = readStored<AffinityMap>(oldData, K.affinity);
   const weighted: WeightedAffinityMap = {};
   const now = Date.now();
 
@@ -194,7 +202,7 @@ async function migrateAffinity(): Promise<void> {
 export async function getWeightedAffinity(): Promise<WeightedAffinityMap> {
   await migrateAffinity();
   const data = await chrome.storage.local.get({ [K.weightedAffinity]: {} });
-  return data[K.weightedAffinity] as WeightedAffinityMap;
+  return readStored<WeightedAffinityMap>(data, K.weightedAffinity);
 }
 
 export function pickBestWeightedGroup(
@@ -322,7 +330,7 @@ export function formatWeightedAffinityHints(
 
 export async function getSuggestions(): Promise<GroupSuggestion[] | null> {
   const data = await chrome.storage.local.get({ [K.suggestions]: null });
-  return data[K.suggestions] as GroupSuggestion[] | null;
+  return readStored<GroupSuggestion[] | null>(data, K.suggestions);
 }
 
 export async function saveSuggestions(suggestions: GroupSuggestion[] | null): Promise<void> {
@@ -333,7 +341,7 @@ export async function saveSuggestions(suggestions: GroupSuggestion[] | null): Pr
 
 export async function getDomainRules(): Promise<DomainRule[]> {
   const data = await chrome.storage.sync.get({ [K.domainRules]: [] });
-  return data[K.domainRules] as DomainRule[];
+  return readStored<DomainRule[]>(data, K.domainRules);
 }
 
 export async function saveDomainRules(rules: DomainRule[]): Promise<void> {
@@ -355,7 +363,7 @@ export async function saveDomainRules(rules: DomainRule[]): Promise<void> {
 
 export async function getWorkspaces(): Promise<WorkspaceMap> {
   const data = await chrome.storage.local.get({ [K.workspaces]: {} });
-  return data[K.workspaces] as WorkspaceMap;
+  return readStored<WorkspaceMap>(data, K.workspaces);
 }
 
 export async function saveWorkspace(name: string, workspace: Workspace): Promise<void> {
@@ -374,7 +382,7 @@ export async function removeWorkspace(name: string): Promise<void> {
 
 export async function getUndoSnapshot(): Promise<UndoSnapshot | null> {
   const data = await chrome.storage.local.get({ [K.undoSnapshot]: null });
-  return data[K.undoSnapshot] as UndoSnapshot | null;
+  return readStored<UndoSnapshot | null>(data, K.undoSnapshot);
 }
 
 export async function saveUndoSnapshot(snapshot: UndoSnapshot | null): Promise<void> {
@@ -385,7 +393,7 @@ export async function saveUndoSnapshot(snapshot: UndoSnapshot | null): Promise<v
 
 export async function getStats(): Promise<Stats> {
   const data = await chrome.storage.local.get({ [K.stats]: DEFAULT_STATS });
-  return { ...DEFAULT_STATS, ...(data[K.stats] as Stats) };
+  return { ...DEFAULT_STATS, ...readStored<Stats>(data, K.stats) };
 }
 
 export async function incrementStats(tabsGrouped: number): Promise<Stats> {
@@ -403,7 +411,7 @@ export async function incrementStats(tabsGrouped: number): Promise<Stats> {
 
 export async function getCosts(): Promise<CostTotals> {
   const data = await chrome.storage.local.get({ [K.costs]: null });
-  const stored = data[K.costs] as CostTotals | null;
+  const stored = readStored<CostTotals | null>(data, K.costs);
   if (!stored) return { ...DEFAULT_COSTS, byProvider: {}, sessionCost: runtimeSessionCost };
   return {
     ...DEFAULT_COSTS,
@@ -438,7 +446,7 @@ export async function addCost(
 
 export async function getHistory(): Promise<HistoryEntry[]> {
   const data = await chrome.storage.local.get({ [K.history]: [] });
-  return data[K.history] as HistoryEntry[];
+  return readStored<HistoryEntry[]>(data, K.history);
 }
 
 export async function addHistory(suggestions: GroupSuggestion[]): Promise<void> {
@@ -496,7 +504,7 @@ export function summarizeHistory(history: HistoryEntry[]): string {
 
 export async function getCorrections(): Promise<CorrectionEntry[]> {
   const data = await chrome.storage.local.get({ [K.corrections]: [] });
-  return data[K.corrections] as CorrectionEntry[];
+  return readStored<CorrectionEntry[]>(data, K.corrections);
 }
 
 export async function addCorrections(entry: CorrectionEntry): Promise<void> {
@@ -535,7 +543,7 @@ export async function summarizeCorrections(corrections?: CorrectionEntry[]): Pro
 
 export async function getRejections(): Promise<RejectionEntry[]> {
   const data = await chrome.storage.local.get({ [K.rejections]: [] });
-  const all = data[K.rejections] as RejectionEntry[];
+  const all = readStored<RejectionEntry[]>(data, K.rejections);
   const now = Date.now();
   return all.filter((r) => now - r.timestamp < REJECTION_MAX_AGE_MS);
 }
@@ -592,7 +600,7 @@ export async function summarizeRejections(rejections?: RejectionEntry[]): Promis
 
 export async function getGroupColorPrefs(): Promise<Record<string, Color>> {
   const data = await chrome.storage.local.get({ [K.groupColorPrefs]: {} });
-  return data[K.groupColorPrefs] as Record<string, Color>;
+  return readStored<Record<string, Color>>(data, K.groupColorPrefs);
 }
 
 export async function saveGroupColorPref(groupName: string, color: Color): Promise<void> {
@@ -605,7 +613,7 @@ export async function saveGroupColorPref(groupName: string, color: Color): Promi
 
 export async function getSnoozedTabs(): Promise<SnoozedTab[]> {
   const data = await chrome.storage.local.get({ [K.snoozedTabs]: [] });
-  return data[K.snoozedTabs] as SnoozedTab[];
+  return readStored<SnoozedTab[]>(data, K.snoozedTabs);
 }
 
 const MAX_SNOOZED = 50;
@@ -627,7 +635,7 @@ export async function removeSnoozedTab(id: string): Promise<void> {
 
 export async function getCoOccurrence(): Promise<Record<string, number>> {
   const data = await chrome.storage.local.get({ [K.coOccurrence]: {} });
-  return data[K.coOccurrence] as Record<string, number>;
+  return readStored<Record<string, number>>(data, K.coOccurrence);
 }
 
 export async function updateCoOccurrence(history: HistoryEntry[]): Promise<void> {
