@@ -60,6 +60,14 @@ flowchart TD
 - Any acceptance criterion whose outcome could veto a merge = BLOCKING gate (do-not-merge until human sign-off). Everything else is labeled "post-merge verification, non-blocking" in the card.
 - Reviewer findings become new cards; the reviewer's deferral protocol (`deferred` verdict, `DEPENDENCY: #N`) sequences work that must land before a merge.
 
+## Card management
+
+- The issue description is the test. A card's Question / Constraints / Validation criteria are acceptance criteria, written before any work. The implementation either fits them or it doesn't — you don't change the test to fit the code, and you don't rewrite the card to fit the outcome.
+- The description is largely immutable. Fix typos and factual slips; never change scope. When work reveals the card is wrong, that is a finding — report it and let the lead decide. The card text stands.
+- New requirements become new cards. Scope changes, new candidates, and follow-on work get a child card under the parent. The parent text stays untouched; a successful child resolves the parent.
+- Comments are the archive. Add comments freely and meaningfully — discussion trail, history, evidence, findings. The comment stream is the card's living record; the description is its fixed contract.
+- Card-description rewrites require explicit, specific approval — the same gate as merging.
+
 ## Interacting with the lead
 
 - Checkpoint decisions in prose with structured options and a recommendation. Do not use the ask tool unless unavoidable.
