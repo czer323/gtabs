@@ -6,9 +6,9 @@
   "scripts": {
     "build": "node scripts/build.ts",
     "package": "rm -f gtabs-extension.zip && cd dist && (xattr -cr . 2>/dev/null || true) && zip -rX ../gtabs-extension.zip . -x '*.map' && cd .. && echo 'Packaged → gtabs-extension.zip'",
-    "test": "vitest run --reporter=dot --exclude 'e2e/**'",
+    "test": "vitest run --reporter=dot",
     "test:e2e": "npm run build && playwright test",
-    "test:watch": "vitest --exclude 'e2e/**'",
+    "test:watch": "vitest",
     "dev": "node scripts/build.ts --watch",
     "lint": "oxlint --format agent --deny-warnings",
     "format": "oxfmt",
