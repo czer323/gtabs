@@ -7,6 +7,7 @@
     "build": "node scripts/build.ts",
     "package": "rm -f gtabs-extension.zip && cd dist && (xattr -cr . 2>/dev/null || true) && zip -rX ../gtabs-extension.zip . -x '*.map' && cd .. && echo 'Packaged → gtabs-extension.zip'",
     "test": "vitest run --reporter=dot",
+    "test:e2e": "npm run build && playwright test",
     "test:watch": "vitest",
     "dev": "node scripts/build.ts --watch",
     "lint": "oxlint --format agent --deny-warnings",
@@ -17,10 +18,12 @@
     "fix": "npm run lint -- --fix && npm run format && npm run check"
   },
   "devDependencies": {
+    "@playwright/test": "^1.62.1",
     "@types/chrome": "^0.2.5",
     "@types/node": "^26.1.2",
     "@vitest/coverage-v8": "^4.1.10",
     "esbuild": "^0.28.1",
+    "eslint-plugin-playwright": "^2.11.0",
     "jsdom": "^30.0.1",
     "oxfmt": "^0.61.0",
     "oxlint": "^1.76.0",
