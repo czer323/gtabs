@@ -2,8 +2,20 @@ import type { Settings, DomainRule, Color, ProviderPreset, MessageResponse } fro
 import { DEFAULT_SETTINGS, PROVIDERS, COLORS } from "./types";
 import { getSettings, saveSettings, getDomainRules, saveDomainRules } from "./storage";
 
-// oxlint-disable-next-line typescript/no-unnecessary-type-parameters -- T enables typed call sites like $<HTMLButtonElement>("organize") (58 usages)
+// oxlint-disable-next-line typescript/no-unnecessary-type-parameters, typescript/no-unsafe-type-assertion -- T enables typed call sites like $<HTMLButtonElement>("organize") (58 usages); getElementById lacks a generic, so this cast is the sanctioned DOM-boundary exemption
 const $ = <T extends HTMLElement>(id: string): T => document.getElementById(id) as T;
+
+const COLOR_VALUES: readonly string[] = COLORS;
+
+function isColor(v: string | undefined): v is Color {
+  return v !== undefined && COLOR_VALUES.includes(v);
+}
+
+const REORG_SCHEDULES: readonly string[] = ["off", "daily", "weekly"];
+
+function isReorgSchedule(v: string): v is Settings["reorgSchedule"] {
+  return REORG_SCHEDULES.includes(v);
+}
 
 // --- Tab switching ---
 document.querySelectorAll<HTMLButtonElement>(".tab-btn").forEach((btn) => {
@@ -11,8 +23,8 @@ document.querySelectorAll<HTMLButtonElement>(".tab-btn").forEach((btn) => {
     const tab = btn.dataset.tab!;
     document.querySelectorAll(".tab-btn").forEach((b) => b.classList.toggle("active", b === btn));
     document
-      .querySelectorAll(".tab-panel")
-      .forEach((p) => p.classList.toggle("active", (p as HTMLElement).dataset.tab === tab));
+      .querySelectorAll<HTMLElement>(".tab-panel")
+      .forEach((p) => p.classList.toggle("active", p.dataset.tab === tab));
     try {
       localStorage.setItem("gtabs-settings-tab", tab);
     } catch {
@@ -23,8 +35,7 @@ document.querySelectorAll<HTMLButtonElement>(".tab-btn").forEach((btn) => {
 // Restore last tab
 try {
   const saved = localStorage.getItem("gtabs-settings-tab");
-  if (saved)
-    (document.querySelector(`.tab-btn[data-tab="${saved}"]`) as HTMLButtonElement)?.click();
+  if (saved) document.querySelector<HTMLButtonElement>(`.tab-btn[data-tab="${saved}"]`)?.click();
 } catch {
   /* ignore */
 }
@@ -226,7 +237,9 @@ async function save() {
     enablePatternMining: inEnablePatternMining.checked,
     groupDriftThreshold:
       Number(inGroupDriftThreshold.value) || DEFAULT_SETTINGS.groupDriftThreshold,
-    reorgSchedule: inReorgSchedule.value as Settings["reorgSchedule"],
+    reorgSchedule: isReorgSchedule(inReorgSchedule.value)
+      ? inReorgSchedule.value
+      : DEFAULT_SETTINGS.reorgSchedule,
     reorgTime: Number(inReorgTime.value),
     pinnedGroups: current.pinnedGroups || [],
     smartUngroup: inSmartUngroup.checked,
@@ -365,12 +378,13 @@ async function renderDomainRules() {
   const saveRules = async () => {
     const updated: DomainRule[] = [];
     rulesContainer.querySelectorAll(".rule-row").forEach((row, _i) => {
-      const domain = (row.querySelector(".rule-domain") as HTMLInputElement).value
-        .trim()
+      const domain = row
+        .querySelector<HTMLInputElement>(".rule-domain")!
+        .value.trim()
         .toLowerCase();
-      const groupName = (row.querySelector(".rule-group") as HTMLInputElement).value.trim();
-      const color = (row.querySelector(".rule-color") as HTMLSelectElement).value as Color;
-      if (domain && groupName) updated.push({ domain, groupName, color });
+      const groupName = row.querySelector<HTMLInputElement>(".rule-group")!.value.trim();
+      const color = row.querySelector<HTMLSelectElement>(".rule-color")!.value;
+      if (domain && groupName && isColor(color)) updated.push({ domain, groupName, color });
     });
     await saveDomainRules(updated);
   };
@@ -378,10 +392,10 @@ async function renderDomainRules() {
   rulesContainer
     .querySelectorAll("input, select")
     .forEach((el) => el.addEventListener("change", saveRules));
-  rulesContainer.querySelectorAll(".rule-delete").forEach((el) =>
+  rulesContainer.querySelectorAll<HTMLElement>(".rule-delete").forEach((el) =>
     el.addEventListener("click", async () => {
       const currentRules = await getDomainRules();
-      currentRules.splice(Number((el as HTMLElement).dataset.i), 1);
+      currentRules.splice(Number(el.dataset.i), 1);
       await saveDomainRules(currentRules);
       await renderDomainRules();
     }),
@@ -429,11 +443,11 @@ importRulesFile.addEventListener("change", async () => {
       const [domain, groupName, color] = parts;
       const normalizedDomain = domain?.trim().toLowerCase();
       const normalizedGroup = groupName?.trim();
-      if (normalizedDomain && normalizedGroup && COLORS.includes(color as Color)) {
+      if (normalizedDomain && normalizedGroup && isColor(color)) {
         imported.push({
           domain: normalizedDomain,
           groupName: normalizedGroup,
-          color: color as Color,
+          color,
         });
       }
     }
@@ -523,11 +537,11 @@ function renderPinnedGroups(pinnedGroups: string[]) {
     pinnedContainer.appendChild(row);
   }
 
-  pinnedContainer.querySelectorAll(".pinned-delete").forEach((el) =>
+  pinnedContainer.querySelectorAll<HTMLElement>(".pinned-delete").forEach((el) =>
     el.addEventListener("click", async () => {
       const s = await getSettings();
       const groups = [...(s.pinnedGroups || [])];
-      groups.splice(Number((el as HTMLElement).dataset.i), 1);
+      groups.splice(Number(el.dataset.i), 1);
       await saveSettings({ ...s, pinnedGroups: groups });
       renderPinnedGroups(groups);
     }),
@@ -758,7 +772,7 @@ document.querySelectorAll<HTMLButtonElement>(".copy-btn[data-copy]").forEach((bt
 });
 
 document.getElementById("chrome-ai-check-btn")?.addEventListener("click", async () => {
-  const btn = document.getElementById("chrome-ai-check-btn") as HTMLButtonElement;
+  const btn = $<HTMLButtonElement>("chrome-ai-check-btn");
   btn.textContent = "Checking…";
   btn.disabled = true;
   chromeAIAvailable = await checkChromeAI();
