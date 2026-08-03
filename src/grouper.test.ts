@@ -570,7 +570,10 @@ function mockLLM(content: string) {
 }
 
 describe("suggest", () => {
-  beforeEach(() => vi.mocked(fetch).mockReset());
+  beforeEach(() => {
+    vi.unstubAllGlobals();
+    vi.mocked(fetch).mockReset();
+  });
 
   it("returns enriched suggestions from LLM", async () => {
     mockLLM(
@@ -646,9 +649,12 @@ describe("suggest", () => {
   });
 
   it("throws on LLM failure", async () => {
-    (globalThis as any).fetch = vi.fn<typeof fetch>(async () => {
-      throw new Error("timeout");
-    });
+    vi.stubGlobal(
+      "fetch",
+      vi.fn<typeof fetch>(async () => {
+        throw new Error("timeout");
+      }),
+    );
     let caught: Error | null = null;
     try {
       await suggest(tabs, TEST_SETTINGS, {});
