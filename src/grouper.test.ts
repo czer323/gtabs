@@ -555,6 +555,98 @@ describe("parseResponse", () => {
     const result = parseResponse(raw, tabs);
     expect(result).toHaveLength(1);
   });
+
+  // --- Scenario 1: LLM returns no colors — all groups get unique colors ---
+  it("assigns unique colors when all groups have no color or grey", () => {
+    const fiveTabs: TabInfo[] = [
+      { id: 1, title: "A", url: "https://a.com" },
+      { id: 2, title: "B", url: "https://b.com" },
+      { id: 3, title: "C", url: "https://c.com" },
+      { id: 4, title: "D", url: "https://d.com" },
+      { id: 5, title: "E", url: "https://e.com" },
+    ];
+    const raw =
+      '[{"name":"G1","color":"grey","tabIds":[1]},{"name":"G2","tabIds":[2]},{"name":"G3","color":"grey","tabIds":[3]},{"name":"G4","tabIds":[4]},{"name":"G5","color":"grey","tabIds":[5]}]';
+    const result = parseResponse(raw, fiveTabs);
+    expect(result).toHaveLength(5);
+    const colors = result.map((g) => g.color);
+    const uniqueColors = new Set(colors);
+    expect(uniqueColors.size).toBe(5);
+    // No grey should remain — all reassigned to distinct non-grey colors
+    expect(colors).not.toContain("grey");
+  });
+
+  // --- Scenario 2: LLM returns partial colors — gaps filled uniquely ---
+  it("fills missing colors uniquely without conflicting with LLM-provided ones", () => {
+    const fourTabs: TabInfo[] = [
+      { id: 1, title: "A", url: "https://a.com" },
+      { id: 2, title: "B", url: "https://b.com" },
+      { id: 3, title: "C", url: "https://c.com" },
+      { id: 4, title: "D", url: "https://d.com" },
+    ];
+    const raw =
+      '[{"name":"G1","color":"blue","tabIds":[1]},{"name":"G2","tabIds":[2]},{"name":"G3","color":"red","tabIds":[3]},{"name":"G4","tabIds":[4]}]';
+    const result = parseResponse(raw, fourTabs);
+    expect(result).toHaveLength(4);
+    const colors = result.map((g) => g.color);
+    // blue and red must be preserved
+    expect(colors).toContain("blue");
+    expect(colors).toContain("red");
+    // All 4 must be unique
+    expect(new Set(colors).size).toBe(4);
+    // The two missing should be filled with colors != blue and != red
+    const missingColors = colors.filter((c) => c !== "blue" && c !== "red");
+    expect(missingColors).toHaveLength(2);
+    expect(new Set(missingColors).size).toBe(2);
+  });
+
+  // --- Scenario 3: Existing group colors are considered ---
+  it("avoids colors already in use by existing groups", () => {
+    const twoTabs: TabInfo[] = [
+      { id: 1, title: "A", url: "https://a.com" },
+      { id: 2, title: "B", url: "https://b.com" },
+    ];
+    const raw = '[{"name":"G1","color":"grey","tabIds":[1]},{"name":"G2","tabIds":[2]}]';
+    const existingColors: Color[] = ["blue", "red"];
+    const result = parseResponse(raw, twoTabs, existingColors);
+    expect(result).toHaveLength(2);
+    const colors = result.map((g) => g.color);
+    // Neither blue nor red should appear in new suggestions
+    expect(colors).not.toContain("blue");
+    expect(colors).not.toContain("red");
+    // Both groups must have distinct colors
+    expect(new Set(colors).size).toBe(2);
+  });
+
+  // --- Scenario 4: More groups than colors — deterministic rotation ---
+  it("rotates deterministically when more groups than colors", () => {
+    const twelveTabs: TabInfo[] = Array.from({ length: 12 }, (_, i) => ({
+      id: i + 1,
+      title: `Tab${i + 1}`,
+      url: `https://${i + 1}.com`,
+    }));
+    const tabIds = twelveTabs.map((t) => t.id);
+    const groups = tabIds.map((id, i) => `{"name":"G${i + 1}","color":"grey","tabIds":[${id}]}`);
+    const raw = `[${groups.join(",")}]`;
+    const result = parseResponse(raw, twelveTabs);
+    expect(result).toHaveLength(12);
+    const colors = result.map((g) => g.color);
+    // grey is used by the input, so the first 9 groups get the other
+    // 8 palette colors in order, then wrap to grey as the 9th distinct color
+    const expectedFirstNine = [...COLORS.slice(1), COLORS[0]];
+    for (let i = 0; i < 9; i++) {
+      expect(colors[i]).toBe(expectedFirstNine[i]);
+    }
+    // Groups 10-12 wrap again: COLORS[1], COLORS[2], COLORS[3]
+    expect(colors[9]).toBe(COLORS[1]);
+    expect(colors[10]).toBe(COLORS[2]);
+    expect(colors[11]).toBe(COLORS[3]);
+    // No collisions on the first pass: first 9 groups have 9 distinct colors
+    expect(new Set(colors.slice(0, 9)).size).toBe(9);
+    // Deterministic: same input always produces same output
+    const result2 = parseResponse(raw, twelveTabs);
+    expect(result2.map((g) => g.color)).toEqual(colors);
+  });
 });
 
 // ---------- suggest ----------
@@ -671,6 +763,40 @@ describe("suggest", () => {
     const body = JSON.parse(vi.mocked(fetch).mock.calls[0][1]!.body as string);
     expect(body.messages[0].role).toBe("system");
     expect(body.messages[0].content).toContain("tab organizer");
+  });
+
+  it("avoids existing group colors end to end", async () => {
+    // LLM returns two groups with no colors; existing window groups use blue + red
+    mockLLM('[{"name":"G1","tabIds":[1]},{"name":"G2","tabIds":[2]}]');
+    const { suggestions: result } = await suggest(tabs, TEST_SETTINGS, {}, [], "", undefined, [
+      "blue",
+      "red",
+    ]);
+    expect(result).toHaveLength(3); // 2 LLM groups + "Other" for unassigned tab 4
+    const colors = result.map((g) => g.color);
+    expect(colors).not.toContain("blue");
+    expect(colors).not.toContain("red");
+    expect(new Set(colors).size).toBe(3);
+  });
+
+  it("keeps rule-matched group colors and colors new groups around them", async () => {
+    // Domain rules assign blue/red; LLM returns a color-less group that must avoid them
+    mockLLM('[{"name":"Youtube","tabIds":[3]}]');
+    const rules: DomainRule[] = [
+      { domain: "github.com", groupName: "Dev", color: "blue" },
+      { domain: "stackoverflow.com", groupName: "Media", color: "red" },
+    ];
+    const { suggestions: result } = await suggest(tabs, TEST_SETTINGS, {}, rules);
+    const devGroup = result.find((g) => g.name === "Dev");
+    expect(devGroup!.color).toBe("blue");
+    const mediaGroup = result.find((g) => g.name === "Media");
+    expect(mediaGroup!.color).toBe("red");
+    // LLM-derived groups (Youtube + Other for gmail) must not collide with rule colors
+    const llmColors = result
+      .filter((g) => g.name !== "Dev" && g.name !== "Media")
+      .map((g) => g.color);
+    expect(llmColors).not.toContain("blue");
+    expect(llmColors).not.toContain("red");
   });
 });
 
