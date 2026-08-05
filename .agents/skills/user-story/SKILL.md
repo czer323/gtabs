@@ -46,7 +46,7 @@ A user story combines:
 **Acceptance Criteria (Gherkin format):**
 - **Scenario:** [Brief description of the scenario]
 - **Given:** [Initial context or preconditions]
-- **and Given:** [Additional preconditions]
+- **And:** [Additional preconditions]
 - **When:** [Event that triggers the action]
 - **Then:** [Expected outcome]
 
@@ -136,16 +136,14 @@ Fill in the template:
 
 - **Scenario:** [Brief, human-readable scenario describing value]
 - **Given:** [Initial context or precondition]
-- **and Given:** [Additional context or preconditions]
-- **and Given:** [Additional context as needed]
-- **and Given:** [UI-focused context ensuring 'When' can happen]
-- **and Given:** [Outcomes-focused context ensuring 'Then' is delivered]
+- **And:** [Additional context or preconditions]
+- **And:** [UI-focused context ensuring 'When' can happen]
 - **When:** [Event that triggers the action—aligns with 'I want to']
 - **Then:** [Expected outcome—aligns with 'so that']
 ```
 
 **Quality checks:**
-- **Multiple Givens are okay:** Preconditions stack up (e.g., "Given I'm logged in" + "Given I have items in my cart")
+- **Multiple preconditions are okay:** Stack them with **And** (e.g., "Given I'm logged in" + "And I have items in my cart") — never "and Given"
 - **Only one When:** If you need multiple "When" statements, you likely have multiple stories—split them
 - **Only one Then:** If you need multiple "Then" statements, you likely have multiple stories—split them
 - **Alignment:** Does "When" match "I want to"? Does "Then" match "so that"?
@@ -199,7 +197,7 @@ Mini example excerpt:
 #### Acceptance Criteria:
 - **Scenario:** First-time trial user logs in via Google OAuth
 - **Given:** I am on the login page
-- **and Given:** I have a login account
+- **And:** I have a login account
 - **When:** I click the "Sign in with Google" button and authorize the app
 - **Then:** I am logged into the app and redirected to the onboarding flow
 ```

@@ -16,8 +16,8 @@
 
 - **Scenario:** First-time trial user logs in via Google OAuth
 - **Given:** I am on the login page
-- **and Given:** I have a Google account
-- **and Given:** The "Sign in with Google" button is visible
+- **And:** I have a Google account
+- **And:** The "Sign in with Google" button is visible
 - **When:** I click the "Sign in with Google" button and authorize the app
 - **Then:** I am logged into the app and redirected to the onboarding flow
 ```
@@ -47,7 +47,7 @@
 
 - **Scenario:** User logs in
 - **Given:** I want to log in
-- **and Given:** I have an active account
+- **And:** I have an active account
 - **When:** I log in
 - **Then:** It works better
 ```
