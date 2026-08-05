@@ -8,7 +8,7 @@ import type {
   WorkspaceTab,
   SnoozedTab,
 } from "./types";
-import { MODEL_PRICING, SECONDARY_TLDS } from "./types";
+import { MODEL_PRICING, SECONDARY_TLDS, COLORS } from "./types";
 import {
   addCost,
   addCorrections,
@@ -421,6 +421,7 @@ export async function organize(
 
     let tabs = await getTabs();
     let existingGroupNames: string[] = [];
+    let existingGroupColors: Color[] = [];
 
     if (ungroupedOnly || settings.mergeMode) {
       const allTabs = await chrome.tabs.query({ currentWindow: true });
@@ -432,11 +433,14 @@ export async function organize(
       );
       tabs = tabs.filter((t) => !groupedIds.has(t.id));
 
-      // Collect existing group names for smart merge
+      // Collect existing group names and colors for smart merge
       try {
         const windowId = await getCurrentWindowId();
         const groups = await chrome.tabGroups.query({ windowId });
         existingGroupNames = groups.map((g) => g.title || "").filter(Boolean);
+        existingGroupColors = groups
+          .map((g) => g.color)
+          .filter((c): c is Color => COLORS.includes(c));
       } catch {
         /* ignore */
       }
@@ -510,7 +514,15 @@ export async function organize(
     const historyHint = summarizeHistory(history);
     const result =
       tabsForLLM.length >= 2
-        ? await suggest(tabsForLLM, settings, affinity, domainRules, historyHint, extraHints)
+        ? await suggest(
+            tabsForLLM,
+            settings,
+            affinity,
+            domainRules,
+            historyHint,
+            extraHints,
+            existingGroupColors,
+          )
         : // Keep a single leftover tab ungrouped instead of forcing an "Other" group.
           { suggestions: [] as GroupSuggestion[], inputTokens: 0, outputTokens: 0 };
 

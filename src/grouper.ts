@@ -302,7 +302,56 @@ function validateGroup(g: unknown): g is RawGroup {
   return Array.isArray(g.tabIds);
 }
 
-export function parseResponse(raw: string, tabs: TabInfo[]): GroupSuggestion[] {
+/**
+ * Deterministically assign unique colors to groups that need one.
+ * Preserves LLM-provided valid colors; fills gaps and duplicates
+ * from the palette in order, skipping colors already used.
+ * Pure function: same input → same output.
+ */
+export function assignUniqueColors(
+  groups: GroupSuggestion[],
+  existingGroupColors: Color[] = [],
+): GroupSuggestion[] {
+  const usedColors = new Set<Color>(existingGroupColors);
+
+  // First pass: mark LLM-provided valid colors as used
+  for (const g of groups) {
+    if (COLORS.includes(g.color)) {
+      usedColors.add(g.color);
+    }
+  }
+
+  // Second pass: assign missing/duplicate colors
+  let paletteIdx = 0;
+  const findNextAvailable = (): Color => {
+    const totalColors = COLORS.length;
+    for (let attempt = 0; attempt < totalColors; attempt++) {
+      const candidate = COLORS[(paletteIdx + attempt) % totalColors];
+      if (!usedColors.has(candidate)) {
+        paletteIdx = (paletteIdx + attempt + 1) % totalColors;
+        usedColors.add(candidate);
+        return candidate;
+      }
+    }
+    // All colors used — rotate predictably
+    const fallback = COLORS[paletteIdx % totalColors];
+    paletteIdx = (paletteIdx + 1) % totalColors;
+    return fallback;
+  };
+
+  return groups.map((g) => {
+    const isValidColor = COLORS.includes(g.color);
+    const isDuplicate = groups.filter((other) => other.color === g.color).length > 1;
+    if (isValidColor && !isDuplicate) return g;
+    return { ...g, color: findNextAvailable() };
+  });
+}
+
+export function parseResponse(
+  raw: string,
+  tabs: TabInfo[],
+  existingGroupColors: Color[] = [],
+): GroupSuggestion[] {
   const validIds = new Set(tabs.map((t) => t.id));
   const tabMap = new Map(tabs.map((t) => [t.id, t]));
 
@@ -335,7 +384,7 @@ export function parseResponse(raw: string, tabs: TabInfo[]): GroupSuggestion[] {
     })
     .filter((g) => g.tabs.length > 0);
 
-  return groups;
+  return assignUniqueColors(groups, existingGroupColors);
 }
 
 /** Collect any tabs the LLM forgot into an "Other" group */
@@ -387,6 +436,7 @@ export async function suggest(
   domainRules: DomainRule[] = [],
   historyHint = "",
   extraHints?: ExtraHints,
+  existingGroupColors: Color[] = [],
 ): Promise<{ suggestions: GroupSuggestion[]; inputTokens: number; outputTokens: number }> {
   const { matched, remaining } = applyDomainRules(tabs, domainRules);
 
@@ -412,13 +462,19 @@ export async function suggest(
       { role: "system", content: "You are a browser tab organizer. Return only valid JSON." },
       { role: "user", content: prompt },
     ]);
-    chunkResults.push(parseResponse(result.content, chunk));
+    chunkResults.push(parseResponse(result.content, chunk, existingGroupColors));
     totalInput += result.inputTokens;
     totalOutput += result.outputTokens;
   }
 
   const merged = chunks.length > 1 ? mergeSuggestions(chunkResults) : chunkResults[0];
-  const llmSuggestions = collectUnassigned(merged, remaining);
+  // Final pass: fix any colors introduced after parsing (e.g. "Other" group)
+  // while keeping rule-matched groups untouched. Rule colors are user-configured
+  // and also treated as in-use so LLM-assigned colors avoid them.
+  const llmSuggestions = assignUniqueColors(collectUnassigned(merged, remaining), [
+    ...existingGroupColors,
+    ...matched.map((g) => g.color),
+  ]);
 
   return {
     suggestions: [...matched, ...llmSuggestions],
