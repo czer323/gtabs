@@ -42,11 +42,11 @@ body:
     id: scenarios
     attributes:
       label: Acceptance Criteria
-      description: One or more Gherkin scenarios. Each scenario should have Given/When/Then. Use "and Given" for additional preconditions.
+      description: One or more Gherkin scenarios. Each scenario has Given / When / Then. Stack extra preconditions with "And" — never "and Given".
       placeholder: |
         Scenario: First-time user logs in via Google OAuth
         Given I am on the login page
-        and Given I have a Google account
+        And I have a Google account
         When I click "Sign in with Google" and authorize the app
         Then I am logged in and redirected to the onboarding flow
       render: text

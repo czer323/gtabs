@@ -19,14 +19,13 @@ Adapted from `prompts/user-story-prompt-template.md` in the `https://github.com/
 #### Acceptance Criteria:
 - **Scenario:** [Brief, human-readable scenario describing value]
 - **Given:** [Initial context or precondition]
-- **and Given:** [Additional context or preconditions]
-- **and Given:** [Additional context as needed]
-- **and Given:** [UI-focused context ensuring the When can happen]
-- **and Given:** [Outcomes-focused context ensuring the Then is delivered]
+- **And:** [Additional precondition]
+- **And:** [UI-focused precondition ensuring the When can happen]
 - **When:** [Event that triggers the action]
 - **Then:** [Expected outcome aligned to "so that"]
 ```
 
 ## Notes
 - Use only one **When** and one **Then**. Multiple When/Then pairs usually mean the story should be split.
+- Stack extra preconditions with **And** — never write "and Given".
 - If you need multiple outcomes, split the story with `skills/user-story-splitting/SKILL.md`.
