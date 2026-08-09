@@ -2,6 +2,10 @@
 
 ## [0.5.1] - 2026-05-17
 
+### Chore
+
+- Refresh automatically downloaded agent skills and sync `skills-lock.json` hashes.
+
 ### Fixed
 
 - Rebuild context menus with a full `removeAll()` pass so stale child IDs cannot break service worker startup.
