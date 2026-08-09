@@ -6,6 +6,10 @@
 
 - Refresh automatically downloaded agent skills and sync `skills-lock.json` hashes.
 
+### Docs
+
+- Add Chrome tab-group API research reference (`docs/chrome-tabgroups-knowledge-roadmap.md`).
+
 ### Fixed
 
 - Rebuild context menus with a full `removeAll()` pass so stale child IDs cannot break service worker startup.
