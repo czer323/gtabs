@@ -52,7 +52,7 @@ def main() -> int:
     print(f"- **Scenario:** {scenario}")
 
     for index, given in enumerate(givens):
-        label = "Given" if index == 0 else "And"
+        label = "Given" if index == 0 else "and Given"
         print(f"- **{label}:** {given}")
 
     print(f"- **When:** {whens}")
