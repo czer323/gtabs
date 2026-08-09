@@ -1,6 +1,8 @@
 import { defineConfig } from "oxlint";
 
 export default defineConfig({
+  // .agents contains auto-downloaded skill files; never lint them.
+  ignorePatterns: [".agents/**"],
   plugins: ["typescript", "unicorn", "oxc", "eslint", "import"],
   jsPlugins: ["eslint-plugin-playwright"],
   categories: {
