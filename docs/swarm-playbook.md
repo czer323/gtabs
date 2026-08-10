@@ -43,7 +43,8 @@ mid-card gets surfaced to the lead for approval, never auto-accepted.
    non-goals, Gherkin acceptance criteria, acceptance-to-test mapping (each
    scenario maps to a failing test), verification rigor.
 2. **Dispatch** — implementer gets the complete card, works TDD
-   (RED -> GREEN -> REFACTOR) on its own branch, pushes a PR whose body maps
+   (RED -> GREEN -> REFACTOR) on its own branch (`<type>/<area-slug>`,
+   e.g. `fix/popup-stats-labels`), pushes a PR whose body maps
    acceptance criteria to tests, runs `npm run check`.
 3. **Review** — reviewer reads acceptance criteria and the diff, checks scope
    and docs, posts findings. Verdicts: correct (merge), incorrect (fix and
@@ -56,7 +57,18 @@ mid-card gets surfaced to the lead for approval, never auto-accepted.
 
 - Cards are GitHub issues with Gherkin acceptance criteria
   (`.github/ISSUE_TEMPLATE/story.yml`).
-- Commits reference cards: `feat|fix|chore(card #N): ...`.
+- Commits and branches use Conventional Commit with an AREA scope naming the
+  module or product area: `fix(popup): ...`, `chore(storage): ...`. Card numbers
+  never appear in commit subjects or branch names - they belong in PR bodies
+  (e.g. `Closes #97`). Commit messages drive the changelog and must read
+  meaningfully on their own.
+- Card anatomy: the issue body is the user story - the external entry point,
+  written for anyone to read and judge. The dispatch contract is the planning
+  layer - the implementation tasks. Shaping never blurs the two.
+- Context ceilings: umans primary = 1M; implementer redundancy =
+  `opencode-go/deepseek-v4-flash` (1M), never oc flash for long sessions
+  (200k max); `deepv4flsh` = last-resort combo fallback. Workers keep context
+  small: bounded reads, small outputs, no re-reads.
 - Gate: `npm run check`; CI adds e2e.
 - Definition of Done: `.agents/references/definition-of-done.md`.
 

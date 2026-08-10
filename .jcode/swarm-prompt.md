@@ -34,6 +34,23 @@ substitute a model the coordinator did not sanction.
 Fallback chain: primary -> secondary -> fail visibly to coordinator. Route
 health is the gateway's job; do not probe or second-guess routes.
 
+Context ceilings that matter (lead-verified 2026-08-10):
+
+- `umans/umans-deepseek-v4-flash-0731` - 1M context; served via umans'
+  OpenAI-compatible endpoint (`https://api.code.umans.ai/v1/chat/completions`).
+  Implementer primary.
+- `opencode-go/deepseek-v4-flash` - 1M context. Implementer redundancy: when
+  the primary fails, re-dispatch here, never on oc.
+- `oc/deepseek-v4-flash-free` - 200k max. Short tasks only (review, scout,
+  research). Long sessions die on it.
+- `deepv4flsh` - gateway combo of free models (no fixed ceiling); last-resort
+  fallback when context metadata is misrepresented.
+
+Worker context discipline (mandatory in implementer prompts): bounded reads
+(line ranges, not whole files), small tool outputs (tail/head, diff over
+dumps), never re-read files already seen, push early. Long sessions die from
+accumulated context, not from the code.
+
 Concurrency: up to 3 implementers + 1 docs + 1-2 reviewers live. Gateway
 distributes across providers, so rate limits are not a worker concern.
 
@@ -44,7 +61,7 @@ distributes across providers, so rate limits are not a worker concern.
    criteria (per `.github/ISSUE_TEMPLATE/story.yml`), acceptance-to-test mapping
    (every scenario -> at least one failing test), verification rigor.
 2. **Dispatch.** Implementer receives the complete card text at spawn, never
-   conversation history. Branch `feat|fix|chore/<kebab>`. TDD: failing test per
+   conversation history. Branch `<type>/<area-slug>` where area names the module (e.g. `fix/popup-stats-labels`, `chore/storage-suppressions`). TDD: failing test per
    acceptance scenario before implementation. `npm run check`. Push branch + PR.
    PR body maps acceptance criteria to tests.
 3. **Review.** Coordinator spawns reviewer. Verdicts: `correct` (reviewer
@@ -87,7 +104,16 @@ distributes across providers, so rate limits are not a worker concern.
 - Cards are GitHub issues with Gherkin acceptance criteria
   (`.github/ISSUE_TEMPLATE/story.yml`). The issue description is the test; the
   comment stream is the archive.
-- Commits reference cards: `feat|fix|chore(card #N): ...`.
+- Commits and branches use Conventional Commit with an AREA scope naming the
+  module or product area: `fix(popup): ...`, `chore(storage): ...`. Card numbers
+  never appear in commit subjects or branch names - they belong in PR bodies
+  (e.g. `Closes #97`). Commit messages drive the changelog and must read
+  meaningfully on their own.
+- Card anatomy: the issue body is the user story - the external entry point,
+  written for anyone to read and judge. The dispatch contract is the planning
+  layer - the implementation tasks (scope, non-goals, acceptance-to-test
+  mapping). Shaping never blurs the two: the story stays stable, the plan does
+  the work.
 - Gate: `npm run check` (test, format, lint, typecheck, build). CI adds e2e.
 - Definition of Done: `.agents/references/definition-of-done.md`.
 - Personality docs: `.omp/agents/` (pit-orchestrator / pit-implementer /
