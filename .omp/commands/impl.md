@@ -1,6 +1,6 @@
 # Implement
 
-Dispatch implementation work to pit-implementer.
+Dispatch implementation work to implementer.
 
 ## Arguments
 
@@ -10,8 +10,8 @@ Dispatch implementation work to pit-implementer.
 
 1. Read `$ARGUMENTS` to determine the task. Fetch issue/card details if URL.
 
-2. Spawn a **pit-implementer** subagent with `isolated: true`:
-   - `agent`: pit-implementer
+2. Spawn a **implementer** subagent with `isolated: true`:
+   - `agent`: implementer
    - `task`: the implementation request
 
 3. Do NOT implement anything yourself. Dispatch only.
