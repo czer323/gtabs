@@ -14,19 +14,22 @@ enforces this file; workers follow the card contract they receive at spawn.
 
 ## Model routing
 
-All routes run through the OmniRoute gateway. Free tier only. NO `auto/*` pools
+All routes run through the OmniRoute gateway (jcode profile `openai-compatible`,
+base `http://192.168.7.163:20128/v1`). Free tier only. NO `auto/*` pools
 (paid-tier routing), NO `pu/*` / `af/*` proxies (2-3 minute free tier), no paid
-tiers of any kind. Spawn with an explicit `model`; never silently substitute a
-model the coordinator did not sanction.
+tiers of any kind. Spawn with an explicit pinned model id of the form
+`openai-compatible:<gateway-model-id>` (e.g.
+`openai-compatible:umans/umans-deepseek-v4-flash-0731`); never silently
+substitute a model the coordinator did not sanction.
 
-| Member          | Role                                                                                                                                | Model id                                                                          | Effort  |
-| --------------- | ----------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------- | ------- |
-| Coordinator     | Root session. Shapes cards, dispatches, routes reviews, verifies merges, owns board hygiene, drafts docs cards. Never touches code. | `opencode-go/deepseek-v4-pro` (session model; switch manually)                    | high    |
-| Implementer     | One per active card. TDD, branch + PR, `npm run check`. Never merges.                                                               | `umans/umans-deepseek-v4-flash-0731` (secondary: `opencode-go/deepseek-v4-flash`) | medium  |
-| Reviewer        | One per review cycle. Five-axis adversarial review, posts findings, merges on approval + green CI.                                  | `oc/deepseek-v4-flash-free`                                                       | high    |
-| Docs scout      | Gap audit + pitch only. No edits.                                                                                                   | `gemini/gemma-4-31b-it`                                                           | low     |
-| Docs specialist | Executes approved docs cards; receives doc-update work routed from other cards.                                                     | `oc/deepseek-v4-flash-free`                                                       | medium  |
-| Scout           | Read-only triage and research.                                                                                                      | `oc/deepseek-v4-flash-free`                                                       | minimal |
+| Member          | Role                                                                                                                                | Model id                                                                                                              | Effort  |
+| --------------- | ----------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------- | ------- |
+| Coordinator     | Root session. Shapes cards, dispatches, routes reviews, verifies merges, owns board hygiene, drafts docs cards. Never touches code. | `openai-compatible:umans/umans-deepseek-v4-flash-0731` (session model; switch manually)                               | high    |
+| Implementer     | One per active card. TDD, branch + PR, `npm run check`. Never merges.                                                               | `openai-compatible:umans/umans-deepseek-v4-flash-0731` (secondary: `openai-compatible:opencode-go/deepseek-v4-flash`) | medium  |
+| Reviewer        | One per review cycle. Five-axis adversarial review, posts findings, merges on approval + green CI.                                  | `openai-compatible:oc/deepseek-v4-flash-free`                                                                         | high    |
+| Docs scout      | Gap audit + pitch only. No edits.                                                                                                   | `openai-compatible:gemini/gemma-4-31b-it`                                                                             | low     |
+| Docs specialist | Executes approved docs cards; receives doc-update work routed from other cards.                                                     | `openai-compatible:oc/deepseek-v4-flash-free`                                                                         | medium  |
+| Scout           | Read-only triage and research.                                                                                                      | `openai-compatible:oc/deepseek-v4-flash-free`                                                                         | minimal |
 
 Fallback chain: primary -> secondary -> fail visibly to coordinator. Route
 health is the gateway's job; do not probe or second-guess routes.

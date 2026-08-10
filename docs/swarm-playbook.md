@@ -16,7 +16,7 @@ documentation stops being an afterthought.
 
 | Member          | Count        | Job                                                                                                                       | Model                                                                           |
 | --------------- | ------------ | ------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------- |
-| Coordinator     | 1, always    | Shapes cards, dispatches, routes reviews, verifies merges, board hygiene. Never codes, never merges on its own authority. | `opencode-go/deepseek-v4-pro` (your session model)                              |
+| Coordinator     | 1, always    | Shapes cards, dispatches, routes reviews, verifies merges, board hygiene. Never codes, never merges on its own authority. | `umans/umans-deepseek-v4-flash-0731` (your session model)                       |
 | Implementer     | up to 3      | TDD per card, branch + PR, never merges.                                                                                  | `umans/umans-deepseek-v4-flash-0731` (fallback `opencode-go/deepseek-v4-flash`) |
 | Reviewer        | 1-2 pool     | Five-axis review, findings on PR, merges on approval + green CI.                                                          | `oc/deepseek-v4-flash-free`                                                     |
 | Docs scout      | 1, as needed | Finds doc gaps, pitches candidates. No edits.                                                                             | `gemini/gemma-4-31b-it`                                                         |
@@ -31,9 +31,9 @@ mid-card gets surfaced to the lead for approval, never auto-accepted.
 ## Starting a swarm session
 
 1. Open a session rooted at this repo.
-2. Switch your session model to `opencode-go/deepseek-v4-pro` (the coordinator
-   tier). Everything else loads automatically: `.jcode/swarm-prompt.md` is the
-   swarm config.
+2. Switch your session model to `umans/umans-deepseek-v4-flash-0731` (the
+   coordinator tier). Everything else loads automatically:
+   `.jcode/swarm-prompt.md` is the swarm config.
 3. Say what you want, e.g. "run the card pipeline for #88" or "resume the gTabs
    swarm". The coordinator shapes, dispatches, and reports.
 
