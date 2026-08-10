@@ -491,8 +491,7 @@ export function summarizeHistory(history: HistoryEntry[]): string {
   // Pick top group for each domain
   const lines: string[] = [];
   for (const [domain, groups] of Object.entries(freq)) {
-    // oxlint-disable-next-line unicorn/no-array-sort -- Array#toSorted requires ES2023 lib; project targets ES2022
-    const top = Object.entries(groups).sort((a, b) => b[1] - a[1])[0];
+    const top = Object.entries(groups).toSorted((a, b) => b[1] - a[1])[0];
     if (top[1] >= 3) lines.push(`  ${domain} → "${top[0]}" (${top[1]}x)`);
   }
   return lines.length
@@ -647,8 +646,7 @@ export async function updateCoOccurrence(history: HistoryEntry[]): Promise<void>
       const domains = group.domains.slice(0, 20); // cap per group
       for (let i = 0; i < domains.length; i++) {
         for (let j = i + 1; j < domains.length; j++) {
-          // oxlint-disable-next-line unicorn/no-array-sort -- Array#toSorted requires ES2023 lib; project targets ES2022
-          const pair = [domains[i], domains[j]].sort().join("|");
+          const pair = [domains[i], domains[j]].toSorted().join("|");
           matrix[pair] = (matrix[pair] ?? 0) + 1;
         }
       }
@@ -662,8 +660,7 @@ export async function summarizeCoOccurrence(matrix?: Record<string, number>): Pr
   const data = matrix ?? (await getCoOccurrence());
   const entries = Object.entries(data)
     .filter(([, count]) => count >= 3)
-    // oxlint-disable-next-line unicorn/no-array-sort -- Array#toSorted requires ES2023 lib; project targets ES2022
-    .sort((a, b) => b[1] - a[1]);
+    .toSorted((a, b) => b[1] - a[1]);
   if (!entries.length) return "";
 
   // Cluster connected domains
