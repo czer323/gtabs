@@ -168,15 +168,17 @@ export interface ExtraHints {
 
 /** Strip characters that could break JSON or inject prompt instructions */
 function sanitizeForPrompt(text: string): string {
-  return (
-    text
-      // oxlint-disable-next-line eslint/no-control-regex -- intentionally strip control chars from LLM prompt text; Unicode-escaped form is still flagged by oxlint
-      .replace(/[\u{0000}-\u{001F}\u{007F}]/gu, " ")
-      .replace(/[\r\n]+/g, " ")
-      .replace(/["`]/g, "'")
-      .replace(/\s+/g, " ")
-      .trim()
-  );
+  let cleaned = "";
+  for (const ch of text) {
+    const code = ch.codePointAt(0)!;
+    // Replace C0 control chars (0x00-0x1F) and DEL (0x7F) with a space
+    cleaned += code <= 0x1f || code === 0x7f ? " " : ch;
+  }
+  return cleaned
+    .replace(/[\r\n]+/g, " ")
+    .replace(/["`]/g, "'")
+    .replace(/\s+/g, " ")
+    .trim();
 }
 
 export function buildPrompt(
