@@ -10,9 +10,7 @@ if (!nextVersion) {
   process.exit(1);
 }
 
-const manifest = JSON.parse(readFileSync("manifest.json", "utf8")) as {
-  version: string;
-};
+const manifest = JSON.parse(readFileSync("manifest.json", "utf8"));
 manifest.version = nextVersion;
 writeFileSync("manifest.json", `${JSON.stringify(manifest, null, 2)}\n`);
 console.log(`manifest.json version: ${nextVersion}`);
