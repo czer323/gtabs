@@ -92,7 +92,9 @@ Open a pull request directly. No issue needed.
 
 1. **Open an issue first** to discuss the idea before writing code. This avoids wasted effort if the change doesn't fit the project's scope.
 2. **Keep PRs focused** — one change per PR. A PR mixing a bug fix, a refactor, and a feature takes much longer to review.
-3. **Update CHANGELOG.md** under the current version heading describing what changed.
+3. **Use Conventional Commit prefixes** — the changelog and next version are
+   derived from commit messages at release time, so describe what each merged
+   change does via its commit prefix.
 4. **Run the full test suite** before opening the PR.
 5. **Write a clear description** — explain what the change does and why.
 
@@ -147,16 +149,23 @@ A maintainer reviews within a few days. Expect questions and requests for change
 - [ ] No new runtime dependencies added
 - [ ] New features have test coverage
 - [ ] New message types added to the `MessageType` union in `types.ts`
-- [ ] `CHANGELOG.md` updated
+- [ ] Commits follow the Conventional Commits prefixes (see Release Cycle)
+- [ ] No hand-edits to version or `CHANGELOG.md` — those are generated at release
 
 ---
 
 ## Release Cycle
 
-Releases are tagged from `main` when enough changes have accumulated — no fixed schedule. To trigger a release:
+Releases are versioned and published from `main` by release automation
+(semantic-release). The repo owner drives releases; the process, versioning
+rules, validation, and troubleshooting are defined in the
+[Release Contract](docs/semantic-release-plan.md). Read it before releasing.
 
-1. Bump `version` in both `manifest.json` and `package.json`
-2. Update `CHANGELOG.md` with changes since last release
-3. Tag and push: `git tag vX.Y.Z && git push origin vX.Y.Z`
+In short:
 
-The release workflow will build, package, and publish a GitHub Release with the `.zip` artifact.
+- Versions and the changelog are derived from Conventional Commit messages — do
+  **not** hand-edit `version` in `package.json`/`manifest.json` or hand-edit
+  `CHANGELOG.md`. Release automation keeps them in lockstep.
+- Triggers happen on push to `main`. Only commits with `feat`/`fix`/`perf`
+  produce a release; everything else is a no-op by design.
+- The release commit carries `[skip ci]` so it does not loop CI.
