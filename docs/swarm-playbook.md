@@ -14,14 +14,14 @@ documentation stops being an afterthought.
 
 ## Members
 
-| Member | Count | Job | Model |
-| --- | --- | --- | --- |
-| Coordinator | 1, always | Shapes cards, dispatches, routes reviews, verifies merges, board hygiene. Never codes, never merges on its own authority. | `opencode-go/deepseek-v4-pro` (your session model) |
-| Implementer | up to 3 | TDD per card, branch + PR, never merges. | `umans/umans-deepseek-v4-flash-0731` (fallback `opencode-go/deepseek-v4-flash`) |
-| Reviewer | 1-2 pool | Five-axis review, findings on PR, merges on approval + green CI. | `oc/deepseek-v4-flash-free` |
-| Docs scout | 1, as needed | Finds doc gaps, pitches candidates. No edits. | `gemini/gemma-4-31b-it` |
-| Docs specialist | 1 | Executes approved docs cards; receives routed doc-update work. | `oc/deepseek-v4-flash-free` |
-| Scout | 1, as needed | Read-only triage and research. | `oc/deepseek-v4-flash-free` |
+| Member          | Count        | Job                                                                                                                       | Model                                                                           |
+| --------------- | ------------ | ------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------- |
+| Coordinator     | 1, always    | Shapes cards, dispatches, routes reviews, verifies merges, board hygiene. Never codes, never merges on its own authority. | `opencode-go/deepseek-v4-pro` (your session model)                              |
+| Implementer     | up to 3      | TDD per card, branch + PR, never merges.                                                                                  | `umans/umans-deepseek-v4-flash-0731` (fallback `opencode-go/deepseek-v4-flash`) |
+| Reviewer        | 1-2 pool     | Five-axis review, findings on PR, merges on approval + green CI.                                                          | `oc/deepseek-v4-flash-free`                                                     |
+| Docs scout      | 1, as needed | Finds doc gaps, pitches candidates. No edits.                                                                             | `gemini/gemma-4-31b-it`                                                         |
+| Docs specialist | 1            | Executes approved docs cards; receives routed doc-update work.                                                            | `oc/deepseek-v4-flash-free`                                                     |
+| Scout           | 1, as needed | Read-only triage and research.                                                                                            | `oc/deepseek-v4-flash-free`                                                     |
 
 Rules of the road: free tier only, OmniRoute gateway only. No `auto/*` pools,
 no `pu/*` or `af/*` proxies. The implementer never merges; the reviewer merges;
@@ -62,11 +62,11 @@ mid-card gets surfaced to the lead for approval, never auto-accepted.
 
 ## Backlog triage (2026-08-10)
 
-| Status | Issues |
-| --- | --- |
-| Ready (has acceptance criteria) | #88, #89, #90, #91, #11 |
-| Needs shaping | #5, #6, #7, #8, #9, #10, #12, #13, #15 |
-| Reference / revisit later | #78, #83 |
+| Status                          | Issues                                 |
+| ------------------------------- | -------------------------------------- |
+| Ready (has acceptance criteria) | #88, #89, #90, #91, #11                |
+| Needs shaping                   | #5, #6, #7, #8, #9, #10, #12, #13, #15 |
+| Reference / revisit later       | #78, #83                               |
 
 Pilot queue: #88 (lint suppressions) then #12 (stats labels), then #90
 (duplicate-free groups) as the first hard card.
