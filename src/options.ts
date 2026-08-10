@@ -1,6 +1,12 @@
-import type { Settings, DomainRule, Color, ProviderPreset, MessageResponse, Stats } from "./types";
+import type { Settings, DomainRule, Color, ProviderPreset, MessageResponse } from "./types";
 import { DEFAULT_SETTINGS, PROVIDERS, COLORS } from "./types";
-import { getSettings, saveSettings, getDomainRules, saveDomainRules } from "./storage";
+import {
+  getSettings,
+  saveSettings,
+  getDomainRules,
+  saveDomainRules,
+  formatStatsLine,
+} from "./storage";
 
 // oxlint-disable-next-line typescript/no-unnecessary-type-parameters, typescript/no-unsafe-type-assertion -- T enables typed call sites like $<HTMLButtonElement>("organize") (58 usages); getElementById lacks a generic, so this cast is the sanctioned DOM-boundary exemption
 const $ = <T extends HTMLElement>(id: string): T => document.getElementById(id) as T;
@@ -469,11 +475,6 @@ importRulesFile.addEventListener("change", async () => {
 });
 
 // --- Data ---
-
-export function formatStatsLine(s: Stats): string {
-  const last = s.lastOrganizedAt ? new Date(s.lastOrganizedAt).toLocaleDateString() : "never";
-  return `<strong>${s.totalOrganizations.toLocaleString()}</strong> total organizes &middot; <strong>${s.totalTabsGrouped.toLocaleString()}</strong> total tabs grouped &middot; Last: ${last}`;
-}
 
 async function refreshData() {
   const [statsRes, costsRes] = await Promise.all([

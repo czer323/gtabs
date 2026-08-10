@@ -85,4 +85,19 @@ describe("Popup Page", () => {
     for (let i = 0; i < 10; i++) await new Promise((r) => process.nextTick(r));
     expect(document.getElementById("status")?.textContent).toBe("API Failed");
   });
+
+  it("labels the footer stats with lifetime totals, matching the #12 contract", async () => {
+    (chrome.runtime.sendMessage as any).mockImplementation((msg: any, cb: Function) => {
+      if (msg.type === "get-stats")
+        cb({ stats: { totalOrganizations: 24, totalTabsGrouped: 1400, lastOrganizedAt: null } });
+      else if (msg.type === "get-costs") cb({ costs: { totalCost: 0.01 } });
+      else cb({ status: "done", count: 5 });
+    });
+    vi.resetModules();
+    await import("./popup");
+    for (let i = 0; i < 15; i++) await new Promise((r) => process.nextTick(r));
+
+    const el = document.getElementById("stats-text") as HTMLSpanElement;
+    expect(el.textContent).toBe("24 total organizes · 1,400 total tabs grouped · Last: never");
+  });
 });

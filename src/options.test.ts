@@ -196,14 +196,14 @@ describe("Options Page", () => {
 });
 
 describe("formatStatsLine", () => {
-  // `formatStatsLine` lives in ./options, whose module-scope init needs the DOM;
-  // import it after the DOM is built (same pattern the page tests use).
+  // `formatStatsLine` is a pure module-scope helper in ./storage, importable
+  // without any options-page (DOM) side effects.
   let formatStatsLine: (s: Stats) => string;
   beforeEach(async () => {
     document.body.innerHTML = html;
     resetAllMocks();
     vi.resetModules();
-    formatStatsLine = (await import("./options")).formatStatsLine;
+    formatStatsLine = (await import("./storage")).formatStatsLine;
   });
 
   it("labels populated stats as totals with formatted (thousands-separated) counts", () => {
