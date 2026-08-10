@@ -6,7 +6,7 @@ import type {
   MessageResponse,
 } from "./types";
 import { COLORS } from "./types";
-import { getSuggestions, getSettings, saveSettings } from "./storage";
+import { getSuggestions, getSettings, saveSettings, formatStatsLine } from "./storage";
 
 // oxlint-disable-next-line typescript/no-unnecessary-type-parameters, typescript/no-unsafe-type-assertion -- T enables typed call sites like $<HTMLButtonElement>("organize") (11 usages); getElementById lacks a generic, so this cast is the sanctioned DOM-boundary exemption
 const $ = <T extends HTMLElement>(id: string): T => document.getElementById(id) as T;
@@ -364,8 +364,8 @@ async function refreshFooter() {
     sendMsg({ type: "get-costs" }),
   ]);
 
-  if (statsRes?.stats?.totalOrganizations) {
-    statsText.textContent = `${statsRes.stats.totalOrganizations} organizes · ${statsRes.stats.totalTabsGrouped} tabs`;
+  if (statsRes?.stats) {
+    statsText.innerHTML = formatStatsLine(statsRes.stats);
   }
 
   const totalCost = costsRes?.costs?.totalCost;

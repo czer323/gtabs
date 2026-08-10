@@ -407,6 +407,13 @@ export async function incrementStats(tabsGrouped: number): Promise<Stats> {
   return updated;
 }
 
+// Pure formatter shared by options and popup. Returns markup; textContent
+// yields the "total"-qualified lifetime summary (#12 contract).
+export function formatStatsLine(s: Stats): string {
+  const last = s.lastOrganizedAt ? new Date(s.lastOrganizedAt).toLocaleDateString() : "never";
+  return `<strong>${s.totalOrganizations.toLocaleString()}</strong> total organizes &middot; <strong>${s.totalTabsGrouped.toLocaleString()}</strong> total tabs grouped &middot; Last: ${last}`;
+}
+
 // --- Costs (local) ---
 
 export async function getCosts(): Promise<CostTotals> {
