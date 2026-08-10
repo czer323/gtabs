@@ -1,0 +1,20 @@
+{
+  "branches": ["main"],
+  "plugins": [
+    "@semantic-release/commit-analyzer",
+    "@semantic-release/release-notes-generator",
+    "@semantic-release/npm",
+    [
+      "@semantic-release/exec",
+      {
+        "prepareCmd": "node scripts/sync-version.ts ${nextRelease.version} && npm run build && npm run package"
+      }
+    ],
+    [
+      "@semantic-release/github",
+      {
+        "assets": ["gtabs-extension.zip"]
+      }
+    ]
+  ]
+}
