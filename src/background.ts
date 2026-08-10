@@ -704,17 +704,12 @@ export async function sortCurrentGroupsByDomain(): Promise<number> {
   }
 
   const orderedBuckets = Array.from(buckets.values())
-    .map((bucket) =>
-      // oxlint-disable-next-line unicorn/no-array-sort -- Array#toSorted requires ES2023 lib; project targets ES2022
-      bucket.sort((a, b) => (a.index ?? 0) - (b.index ?? 0)),
-    )
-    // oxlint-disable-next-line unicorn/no-array-sort -- Array#toSorted requires ES2023 lib; project targets ES2022
-    .sort((a, b) => (a[0]?.index ?? 0) - (b[0]?.index ?? 0));
+    .map((bucket) => bucket.toSorted((a, b) => (a.index ?? 0) - (b.index ?? 0)))
+    .toSorted((a, b) => (a[0]?.index ?? 0) - (b[0]?.index ?? 0));
 
   for (const bucket of orderedBuckets) {
     const startIndex = bucket[0]?.index ?? 0;
-    // oxlint-disable-next-line unicorn/no-array-sort -- Array#toSorted requires ES2023 lib; project targets ES2022
-    const sorted = [...bucket].sort((a, b) => {
+    const sorted = [...bucket].toSorted((a, b) => {
       const hostDiff = hostnameFromUrl(a.url!).localeCompare(hostnameFromUrl(b.url!));
       if (hostDiff !== 0) return hostDiff;
       return (a.title || "").localeCompare(b.title || "");
@@ -815,8 +810,7 @@ export async function autoPinImportantApps(windowId?: number): Promise<number> {
         isImportantAppUrl(tab.url) &&
         !isGroupedTab(tab),
     )
-    // oxlint-disable-next-line unicorn/no-array-sort -- Array#toSorted requires ES2023 lib; project targets ES2022
-    .sort((a, b) => (a.index ?? 0) - (b.index ?? 0));
+    .toSorted((a, b) => (a.index ?? 0) - (b.index ?? 0));
 
   let pinnedCount = 0;
   for (let i = 0; i < importantTabs.length; i++) {

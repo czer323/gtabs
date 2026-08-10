@@ -401,6 +401,19 @@ describe("buildPrompt", () => {
     // Quotes are sanitized to prevent prompt injection
     expect(prompt).toContain("Tab 'with' <special> & chars");
   });
+
+  it("strips C0 control characters from tab titles", () => {
+    const ctrl: TabInfo[] = [
+      {
+        id: 1,
+        title: "Tab\x00with\x01control\x1fchars\u007f",
+        url: "https://example.com",
+      },
+    ];
+    const prompt = buildPrompt(ctrl, 6, {});
+    // Control chars are replaced with spaces, keeping words intact
+    expect(prompt).toContain('id: 1 | "Tab with control chars"');
+  });
 });
 
 // ---------- parseResponse ----------
