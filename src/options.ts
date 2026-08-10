@@ -1,4 +1,4 @@
-import type { Settings, DomainRule, Color, ProviderPreset, MessageResponse } from "./types";
+import type { Settings, DomainRule, Color, ProviderPreset, MessageResponse, Stats } from "./types";
 import { DEFAULT_SETTINGS, PROVIDERS, COLORS } from "./types";
 import { getSettings, saveSettings, getDomainRules, saveDomainRules } from "./storage";
 
@@ -470,6 +470,11 @@ importRulesFile.addEventListener("change", async () => {
 
 // --- Data ---
 
+export function formatStatsLine(s: Stats): string {
+  const last = s.lastOrganizedAt ? new Date(s.lastOrganizedAt).toLocaleDateString() : "never";
+  return `<strong>${s.totalOrganizations.toLocaleString()}</strong> total organizes &middot; <strong>${s.totalTabsGrouped.toLocaleString()}</strong> total tabs grouped &middot; Last: ${last}`;
+}
+
 async function refreshData() {
   const [statsRes, costsRes] = await Promise.all([
     sendMsg({ type: "get-stats" }),
@@ -477,9 +482,7 @@ async function refreshData() {
   ]);
 
   if (statsRes?.stats) {
-    const s = statsRes.stats;
-    const last = s.lastOrganizedAt ? new Date(s.lastOrganizedAt).toLocaleDateString() : "never";
-    statsLine.innerHTML = `<strong>${s.totalOrganizations}</strong> organizes &middot; <strong>${s.totalTabsGrouped}</strong> tabs grouped &middot; Last: ${last}`;
+    statsLine.innerHTML = formatStatsLine(statsRes.stats);
   }
 
   if (costsRes?.costs) {

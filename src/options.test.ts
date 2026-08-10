@@ -2,7 +2,7 @@ import { describe, it, expect, vi, beforeEach } from "vitest";
 import { readFileSync } from "fs";
 import { resolve } from "path";
 import { resetAllMocks } from "../vitest.setup";
-import { DEFAULT_SETTINGS } from "./types";
+import { DEFAULT_SETTINGS, type Stats } from "./types";
 // NOTE: `./storage` is imported dynamically inside each test, after `vi.resetModules()`,
 // so spies target the same module instance that `./options` uses after its re-import.
 
@@ -192,5 +192,46 @@ describe("Options Page", () => {
 
     // Handler saw {status:"error"} !== "imported" and alerted the error message.
     expect(alertSpy).toHaveBeenCalledWith("Import failed");
+  });
+});
+
+describe("formatStatsLine", () => {
+  // `formatStatsLine` lives in ./options, whose module-scope init needs the DOM;
+  // import it after the DOM is built (same pattern the page tests use).
+  let formatStatsLine: (s: Stats) => string;
+  beforeEach(async () => {
+    document.body.innerHTML = html;
+    resetAllMocks();
+    vi.resetModules();
+    formatStatsLine = (await import("./options")).formatStatsLine;
+  });
+
+  it("labels populated stats as totals with formatted (thousands-separated) counts", () => {
+    const timestamp = new Date(2026, 3, 15).getTime(); // 4/15/2026
+    const stats: Stats = {
+      totalOrganizations: 24,
+      totalTabsGrouped: 1400,
+      lastOrganizedAt: timestamp,
+    };
+    // The formatter returns markup; assert the text a user actually sees.
+    const el = document.createElement("div");
+    el.innerHTML = formatStatsLine(stats);
+    expect(el.textContent).toBe(
+      `24 total organizes · 1,400 total tabs grouped · Last: ${new Date(
+        timestamp,
+      ).toLocaleDateString()}`,
+    );
+    expect(formatStatsLine(stats)).toContain("total");
+  });
+
+  it("renders the never-organized empty state instead of omitting the section", () => {
+    const stats: Stats = {
+      totalOrganizations: 0,
+      totalTabsGrouped: 0,
+      lastOrganizedAt: null,
+    };
+    const el = document.createElement("div");
+    el.innerHTML = formatStatsLine(stats);
+    expect(el.textContent).toBe("0 total organizes · 0 total tabs grouped · Last: never");
   });
 });
