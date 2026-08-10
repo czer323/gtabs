@@ -7,7 +7,7 @@
     [
       "@semantic-release/exec",
       {
-        "prepareCmd": "node scripts/sync-version.mjs ${nextRelease.version} && npm run build && npm run package"
+        "prepareCmd": "node scripts/sync-version.ts ${nextRelease.version} && npm run build && npm run package"
       }
     ],
     [
