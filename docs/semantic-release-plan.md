@@ -18,9 +18,9 @@ follow, and every rule below exists to keep them true:
   change is not described in a conventional commit, it does not exist for
   release purposes.
 
-The release contract is one genre of repo hygiene, like CONTRIBUTING or the
-swarm playbook. Read it alongside [CONTRIBUTING](../CONTRIBUTING.md) (which
-references it under Release Cycle) and the GitHub story cards under `docs/`.
+The release contract is one genre of repo hygiene, like CONTRIBUTING. Read it
+alongside [CONTRIBUTING](../CONTRIBUTING.md) (which references it under
+Release Cycle) and the GitHub story cards under `docs/`.
 
 ## Why a contract and not a script
 
@@ -52,9 +52,13 @@ The versioning scheme is SemVer. Meaning is derived from commit prefixes:
 | `perf`        | patch bump |
 | anything else | no release |
 
-A `!.` breaking change marker in the commit footer forces a major bump. This
-mapping is governed by the analyzer configuration in release automation and is
-cited from [semantic-release's versioning docs](https://semantic-release.gitbook.io/semantic-release/).
+A breaking change forces a major bump. Two ways to mark it, per the
+[Conventional Commits spec](https://www.conventionalcommits.org/):
+- A `!` before the colon after the type or scope: `feat!:` or `feat(api)!:`.
+- A `BREAKING CHANGE:` footer on any commit type.
+
+This mapping is governed by the analyzer configuration in release automation
+and is cited from [semantic-release's versioning docs](https://semantic-release.org/).
 
 ## Standing process
 
@@ -63,8 +67,8 @@ cited from [semantic-release's versioning docs](https://semantic-release.gitbook
 - Write Conventional Commit messages. `feat:` for user-visible features,
   `fix:` for corrections, `perf:` for performance, `chore:`/`docs:`/`refactor:`
   for everything else.
-- Reference the card in the commit where relevant
-  (per the swarm playbook card convention).
+- Reference the card in the commit where relevant (per the card conventions
+  in `AGENTS.md`).
 - Do not bump versions and do not hand-edit the changelog on a feature branch
   or PR. Those happen once, at release time, from commits.
 - Keep PRs one change per PR so each merged commit describes exactly one thing.
@@ -88,7 +92,7 @@ Releases are triggered by pushing to `main`. The workflow:
 4. Record nothing by hand. The changelog and tag are the records; the GitHub
    Release is the announcement.
 
-Official process reference: [semantic-release — "Trigger a release"](https://semantic-release.gitbook.io/semantic-release/).
+Official process reference: [semantic-release — "Trigger a release"](https://semantic-release.org/).
 
 ### Packaging
 
@@ -136,9 +140,9 @@ card/PR/review process — never by hand-editing the workflow on `main`.
 
 ## Sources
 
-- [semantic-release docs](https://semantic-release.gitbook.io/semantic-release/)
+- [semantic-release docs](https://semantic-release.org/)
 - [Conventional Commits](https://www.conventionalcommits.org/en/v1.0.0/)
-- [semantic-release versioning / commit analysis](https://semantic-release.gitbook.io/semantic-release/)
+- [semantic-release versioning / commit analysis](https://semantic-release.org/learn/usage/commit-analysis)
 - [semantic-release GitHub Actions recipe](https://semantic-release.org/recipes/ci-configurations/github-actions/)
 
 <!-- Keep this contract in sync with CONTRIBUTING.md "Release Cycle". -->
