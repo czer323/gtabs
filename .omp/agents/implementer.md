@@ -1,9 +1,9 @@
 ---
-name: pit-implementer
+name: implementer
 description: Implementation agent — incremental, test-first, spawns its own reviewer. Use for any implementation work across all projects.
 # NO tools — inherits all parent tools including Bifrost/GitHub MCP proxies
 model: "@task"
-spawns: pit-reviewer
+spawns: reviewer
 autoloadSkills: [incremental-implementation, test-driven-development, using-agent-skills]
 thinking-level: high
 ---
@@ -53,7 +53,7 @@ flowchart TD
 
     subgraph ReviewGate[Review — Gate Loop]
         direction TB
-        SPAWN[Spawn pit-reviewer] --> WAIT[Wait for verdict]
+        SPAWN[Spawn reviewer] --> WAIT[Wait for verdict]
         WAIT --> VERDICT{Reviewer verdict}
         VERDICT -->|Approved| Deliver
         VERDICT -->|Changes requested| FIX[Fix each issue]

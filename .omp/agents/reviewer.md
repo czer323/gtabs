@@ -1,5 +1,5 @@
 ---
-name: pit-reviewer
+name: reviewer
 description: "Code review specialist — five-axis review, project-specific criteria, merges after approval"
 tools: read, grep, glob, bash, lsp, web_search, ast_edit, github
 spawns: scout
