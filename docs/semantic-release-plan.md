@@ -47,13 +47,14 @@ The versioning scheme is SemVer. Meaning is derived from commit prefixes:
 
 | Commit prefix | Release impact |
 | ------------- | -------------- |
-| `feat`        | minor bump |
-| `fix`         | patch bump |
-| `perf`        | patch bump |
-| anything else | no release |
+| `feat`        | minor bump     |
+| `fix`         | patch bump     |
+| `perf`        | patch bump     |
+| anything else | no release     |
 
 A breaking change forces a major bump. Two ways to mark it, per the
 [Conventional Commits spec](https://www.conventionalcommits.org/):
+
 - A `!` before the colon after the type or scope: `feat!:` or `feat(api)!:`.
 - A `BREAKING CHANGE:` footer on any commit type.
 
