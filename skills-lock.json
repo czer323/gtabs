@@ -61,6 +61,12 @@
       "skillPath": "skills/deprecation-and-migration/SKILL.md",
       "computedHash": "55a559781ae92cacd6b75acd509e61b577c2660212d1808da2fbb8dbadc90196"
     },
+    "docs-writing": {
+      "source": "mblode/agent-skills",
+      "sourceType": "github",
+      "skillPath": "skills/docs-writing/SKILL.md",
+      "computedHash": "37222e80bad5cef0a4ee4abb6f4c9669c1ca238b1e69d54d81c560af3c85ccc5"
+    },
     "documentation-and-adrs": {
       "source": "addyosmani/agent-skills",
       "sourceType": "github",
