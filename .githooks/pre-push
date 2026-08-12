@@ -1,7 +1,12 @@
 #!/bin/sh
-# Pre-push hook: block direct pushes to main
-# This hook runs before any push. If the push targets the main branch
-# on any remote, it is rejected. Use feature branches and PRs instead.
+# Pre-push hook: block direct pushes to main + run npm run check
+#
+# This hook runs before any push. It:
+# 1. Rejects direct pushes to main (use feature branches + PRs)
+# 2. Runs npm run check (test, format, lint, typecheck, build)
+#    If check fails, the push is rejected.
+#
+# Bypass with --no-verify for emergencies only.
 
 remote="$1"
 url="$2"
@@ -16,4 +21,15 @@ while read local_ref local_oid remote_ref remote_oid; do
   esac
 done
 
+echo "Running npm run check before push..."
+npm run check
+if [ $? -ne 0 ]; then
+  echo ""
+  echo "ERROR: npm run check failed. Push rejected."
+  echo "  Fix the issues above, then retry."
+  echo "  Bypass with --no-verify only for emergencies."
+  exit 1
+fi
+
+echo "Check passed. Pushing..."
 exit 0
